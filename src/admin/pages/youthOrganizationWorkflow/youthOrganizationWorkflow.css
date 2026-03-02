@@ -1,0 +1,117 @@
+.workflow-container {
+  padding: 24px;
+  background: #f4f6f9;
+  min-height: 100vh;
+}
+
+.page-title {
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* Section Title */
+.section-title {
+  margin: 25px 0 10px;
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+}
+
+/* Step Wrapper */
+.step-wrapper {
+  margin-bottom: 10px;
+}
+
+/* Step Header */
+.step-header {
+  padding: 16px 20px;
+  border-radius: 4px;
+  color: #fff;
+  text-align: center;
+  position: relative;
+}
+
+.step-number {
+  position: absolute;
+  left: 15px;
+  top: 10px;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.step-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.step-description {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Action Buttons */
+.step-actions {
+  margin-top: 4px;
+}
+
+.quick-view {
+  background: #4c86b7;
+  text-align: center;
+  padding: 6px;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 4px 0 0 4px;
+  font-size: 12px;
+}
+
+.details {
+  background: #1ba3c6;
+  text-align: center;
+  padding: 6px;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+}
+
+.quick-view:hover,
+.details:hover {
+  opacity: 0.9;
+}
+
+/* Arrow */
+.arrow {
+  text-align: center;
+  margin: 4px 0;
+  font-size: 20px;
+  color: #444;
+}
+
+/* Check */
+.check-icon {
+  text-align: center;
+  font-size: 24px;
+  color: green;
+  margin-top: 10px;
+}
+
+/* Gradient Colors */
+.green-gradient {
+  background: linear-gradient(90deg, #2e8b57, #3cb371);
+}
+
+.purple-gradient {
+  background: linear-gradient(90deg, #6a5acd, #7b68ee);
+}
+
+.pink-gradient {
+  background: linear-gradient(90deg, #ff1493, #ff69b4);
+}
+
+.blue-gradient {
+  background: linear-gradient(90deg, #0072ff, #00aaff);
+}
+
+.cyan-gradient {
+  background: linear-gradient(90deg, #00bcd4, #00acc1);
+}

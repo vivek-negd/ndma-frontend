@@ -1,0 +1,93 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Maharashtra",
+        "st_code": "MH"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[73.7, 16.0], [80.9, 16.0], [80.9, 20.0], [73.7, 20.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Gujarat",
+        "st_code": "GJ"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[68.8, 20.0], [70.8, 20.0], [70.8, 24.0], [68.8, 24.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Rajasthan",
+        "st_code": "RJ"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[69.8, 23.0], [78.0, 23.0], [78.0, 30.0], [69.8, 30.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Uttar Pradesh",
+        "st_code": "UP"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[77.0, 24.0], [84.0, 24.0], [84.0, 30.0], [77.0, 30.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Karnataka",
+        "st_code": "KA"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[74.0, 12.0], [78.0, 12.0], [78.0, 18.0], [74.0, 18.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Tamil Nadu",
+        "st_code": "TN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[76.8, 8.0], [80.2, 8.0], [80.2, 13.0], [76.8, 13.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "West Bengal",
+        "st_code": "WB"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[85.5, 21.0], [89.5, 21.0], [89.5, 27.0], [85.5, 27.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Delhi",
+        "st_code": "DL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[76.8, 28.0], [77.5, 28.0], [77.5, 29.0], [76.8, 29.0]]]
+      }
+    }
+  ]
+}
