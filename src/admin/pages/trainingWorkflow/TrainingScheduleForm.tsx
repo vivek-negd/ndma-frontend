@@ -36,8 +36,7 @@ export const TrainingScheduleForm: React.FC = () => {
         setStatesLoading(true);
         const res = await CommonService.getStates();
         console.log(res,"state");
-        
-        // setStates(res.data?.results ?? (res.data as any) ?? []);
+        setStates(res ?? (res as any) ?? []);
       } catch {
         message.error("Failed to load states");
       } finally {
@@ -49,7 +48,10 @@ export const TrainingScheduleForm: React.FC = () => {
       try {
         setOrgTypesLoading(true);
         const res = await CommonService.getOrgTypes();
-        setOrgTypes((res.data as any) ?? []);
+        if(res.status_code === 200){
+          console.log(res,"org types");
+          setOrgTypes((res.organization_types as any) ?? []);
+        }
       } catch {
         message.error("Failed to load organization types");
       } finally {
@@ -67,7 +69,8 @@ export const TrainingScheduleForm: React.FC = () => {
     try {
       setDistrictsLoading(true);
       const res = await CommonService.getDistrictsByState(stateId);
-      setDistricts((res.data as any) ?? []);
+      console.log(res?.data?.districts? res : [], "districts");
+      setDistricts(Array.isArray(res?.data?.districts) ? res.data.districts : []);
     } catch {
       message.error("Failed to load districts");
     } finally {
@@ -128,7 +131,7 @@ export const TrainingScheduleForm: React.FC = () => {
                   optionFilterProp="children"
                   onChange={handleStateChange}
                 >
-                  {states.map((s) => (
+                  {states?.map((s) => (
                     <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
                   ))}
                 </Select>
@@ -144,7 +147,7 @@ export const TrainingScheduleForm: React.FC = () => {
                   optionFilterProp="children"
                   disabled={districts.length === 0}
                 >
-                  {districts.map((d) => (
+                  {districts?.map((d) => (
                     <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
                   ))}
                 </Select>

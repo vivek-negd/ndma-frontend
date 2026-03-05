@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Upload,
   Button,
@@ -25,6 +25,7 @@ import {
 import type { UploadProps } from "antd";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { CommonService } from "../../../services";
 import Paragraph from "antd/es/typography/Paragraph";
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
@@ -35,6 +36,61 @@ export const YouthOrganisationForm: React.FC = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const [states, setStates] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [orgTypes, setOrgTypes] = useState<any[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
+  const [orgTypesLoading, setOrgTypesLoading] = useState(false);
+
+  useEffect(() => {
+     const fetchStates = async () => {
+       try {
+         setStatesLoading(true);
+         const res = await CommonService.getStates();
+         console.log(res,"state");
+         setStates(res ?? (res as any) ?? []);
+       } catch {
+         message.error("Failed to load states");
+       } finally {
+         setStatesLoading(false);
+       }
+     };
+ 
+     const fetchOrgTypes = async () => {
+       try {
+         setOrgTypesLoading(true);
+         const res = await CommonService.getOrgTypes();
+         if(res.status_code === 200){
+           console.log(res,"org types");
+           setOrgTypes((res.organization_types as any) ?? []);
+         }
+       } catch {
+         message.error("Failed to load organization types");
+       } finally {
+         setOrgTypesLoading(false);
+       }
+     };
+ 
+     fetchStates();
+     fetchOrgTypes();
+   }, []);
+
+   const handleStateChange = async (stateId: string) => {
+      form.setFieldValue("district", undefined);
+      setDistricts([]);
+      try {
+        setDistrictsLoading(true);
+        const res = await CommonService.getDistrictsByState(stateId);
+        console.log(res?.data?.districts? res : [], "districts");
+        setDistricts(Array.isArray(res?.data?.districts) ? res.data.districts : []);
+      } catch {
+        message.error("Failed to load districts");
+      } finally {
+        setDistrictsLoading(false);
+      }
+    };
 
   const allowedTypes = [
     "application/vnd.ms-excel",
@@ -138,15 +194,16 @@ export const YouthOrganisationForm: React.FC = () => {
                 name="state"
                 rules={[{ required: true, message: 'Please select state!' }]}
               >
-                <Select placeholder="Select State">
-                  <Select.Option value="MH">Maharashtra</Select.Option>
-                  <Select.Option value="GJ">Gujarat</Select.Option>
-                  <Select.Option value="RJ">Rajasthan</Select.Option>
-                  <Select.Option value="UP">Uttar Pradesh</Select.Option>
-                  <Select.Option value="KA">Karnataka</Select.Option>
-                  <Select.Option value="TN">Tamil Nadu</Select.Option>
-                  <Select.Option value="WB">West Bengal</Select.Option>
-                  <Select.Option value="DL">Delhi</Select.Option>
+                <Select
+                  placeholder="Select State"
+                  loading={statesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  onChange={handleStateChange}
+                >
+                  {states.map((s) => (
+                    <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
@@ -155,9 +212,19 @@ export const YouthOrganisationForm: React.FC = () => {
               <Form.Item
                 label="District"
                 name="district"
-                rules={[{ required: true, message: 'Please enter district!' }]}
+                rules={[{ required: true, message: 'Please select district!' }]}
               >
-                <Input placeholder="Enter District" />
+                <Select
+                  placeholder="Select District"
+                  loading={districtsLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={districts.length === 0}
+                >
+                  {districts.map((d) => (
+                    <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
 
@@ -165,9 +232,18 @@ export const YouthOrganisationForm: React.FC = () => {
               <Form.Item
                 label="Organization"
                 name="organization"
-                rules={[{ required: true, message: 'Please enter organization!' }]}
+                rules={[{ required: true, message: 'Please select organization!' }]}
               >
-                <Input placeholder="Enter Organization Name" />
+                <Select
+                  placeholder="Select Organization"
+                  loading={orgTypesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {orgTypes.map((o) => (
+                    <Select.Option key={o.id} value={o.id}>{o.name}</Select.Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>

@@ -15,10 +15,22 @@ export interface StateFilters {
 }
 
 export interface District {
-  id: string;
+  id: number;
   name: string;
-  code?: string;
-  state_id: string;
+  lgd_code: string | null;
+  state_id: number;
+  state_name: string;
+  volunteer_count: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface DistrictsResponse {
+  state: State;
+  districts: District[];
+  total_districts: number;
+  total_volunteers_in_state: number;
 }
 
 export interface OrgType {
@@ -50,8 +62,8 @@ export class CommonService {
     return response.data;
   }
 
-  static async getDistrictsByState(stateId: string): Promise<ApiResponse<District[]>> {
-    const response = await commonEndpoint.get<ApiResponse<District[]>>(`/districts/${stateId}`);
+  static async getDistrictsByState(stateId: string): Promise<ApiResponse<DistrictsResponse>> {
+    const response = await commonEndpoint.get<ApiResponse<DistrictsResponse>>(`/states/${stateId}/districts`);
     return response.data;
   }
 
