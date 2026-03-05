@@ -11,39 +11,61 @@ import {
   Col,
   Space,
   message,
+  Upload,
 } from "antd";
 import {
-  PlusOutlined,
+  ArrowLeftOutlined,
   SaveOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
-export const TrainingSchedule = () => {
+export const FourthDayTrainingForm = () => {
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
-      // API call would go here
-      console.log("Training Schedule Data:", values);
-      message.success("Training schedule saved successfully!");
+      console.log("Fourth Day Training Data:", values);
+      message.success("Fourth day training saved successfully!");
       form.resetFields();
     } catch (error) {
-      message.error("Failed to save training schedule!");
+      message.error("Failed to save training data!");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: "24px", background: "#f5f5f5" }}>
-      <Card
-        title="Training Schedule"
-        style={{ maxWidth: 1200, margin: "0 auto" }}
-        bordered
-      >
+    <div style={{ width: "100%", background: "#f5f5f5" }}>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+        <div>
+          <Text style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+            Training Workflow /&nbsp;
+            <span style={{ color: "#2563eb", fontWeight: 500 }}>Add New 4th Day Training Record</span>
+          </Text>
+          <Title level={3} style={{ margin: 0, fontWeight: 700, color: "#111827" }}>
+            Add New 4th Day Training Record
+          </Title>
+          <Text style={{ fontSize: 13, color: "#6b7280" }}>
+            Fill in the details and upload media from day four.
+          </Text>
+        </div>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          style={{ borderRadius: 8 }}
+          onClick={() => navigate(-1)}
+        >
+          Back
+        </Button>
+      </div>
+      {/* ── Form card ── */}
+      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "24px" }}>
         <Form
           form={form}
           layout="vertical"
@@ -98,9 +120,9 @@ export const TrainingSchedule = () => {
                 name="numberOfVolunteers"
                 rules={[{ required: true, message: 'Please enter number of volunteers!' }]}
               >
-                <Input 
-                  type="number" 
-                  placeholder="Enter Number of Volunteers" 
+                <Input
+                  type="number"
+                  placeholder="Enter Number of Volunteers"
                   min={1}
                 />
               </Form.Item>
@@ -118,11 +140,11 @@ export const TrainingSchedule = () => {
 
             <Col xs={24} sm={12} md={6}>
               <Form.Item
-                label="Institute Details (Venue)"
+                label="Institute Details"
                 name="instituteDetails"
                 rules={[{ required: true, message: 'Please enter institute details!' }]}
               >
-                <Input placeholder="Enter Institute Details / Venue" />
+                <Input placeholder="Enter Institute Details" />
               </Form.Item>
             </Col>
 
@@ -132,8 +154,8 @@ export const TrainingSchedule = () => {
                 name="trainersDetails"
                 rules={[{ required: true, message: 'Please enter trainers details!' }]}
               >
-                <Input.TextArea 
-                  placeholder="Enter Trainers Details" 
+                <Input.TextArea
+                  placeholder="Enter Trainers Details"
                   rows={3}
                 />
               </Form.Item>
@@ -143,54 +165,54 @@ export const TrainingSchedule = () => {
           <Row gutter={16}>
             <Col xs={24} sm={12} md={12}>
               <Form.Item
-                label="Start Date"
-                name="startDate"
-                rules={[{ required: true, message: 'Please select start date!' }]}
+                label="Date"
+                name="date"
+                rules={[{ required: true, message: 'Please select date!' }]}
               >
-                <DatePicker 
+                <DatePicker
                   style={{ width: "100%" }}
-                  placeholder="Select Start Date"
+                  placeholder="Select Date"
                 />
               </Form.Item>
             </Col>
 
             <Col xs={24} sm={12} md={12}>
               <Form.Item
-                label="End Date"
-                name="endDate"
-                rules={[{ required: true, message: 'Please select end date!' }]}
+                label="Upload Option"
+                name="uploadOption"
+                rules={[{ required: true, message: 'Please select upload option!' }]}
               >
-                <DatePicker 
-                  style={{ width: "100%" }}
-                  placeholder="Select End Date"
-                />
+                <Select placeholder="Select Upload Option">
+                  <Select.Option value="photos">Upload Photos</Select.Option>
+                  <Select.Option value="documents">Upload Documents</Select.Option>
+                  <Select.Option value="attendance">Upload Attendance</Select.Option>
+                  <Select.Option value="materials">Upload Training Materials</Select.Option>
+                </Select>
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item style={{ textAlign: "center", marginTop: 24 }}>
-            <Space>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={loading}
-                size="large"
-              >
-                Save Schedule
-              </Button>
-              <Button
-                type="default"
-                icon={<PlusOutlined />}
-                size="large"
-                onClick={() => form.resetFields()}
-              >
-                Clear Form
-              </Button>
-            </Space>
-          </Form.Item>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<SaveOutlined />}
+              loading={loading}
+              size="large"
+              style={{ borderRadius: 8, background: "#1d4ed8", border: "none" }}
+            >
+              Save Training
+            </Button>
+            <Button
+              type="default"
+              icon={<UploadOutlined />}
+              size="large"
+            >
+              Upload Files
+            </Button>
+          </div>
         </Form>
-      </Card>
+      </div>
     </div>
   );
 };

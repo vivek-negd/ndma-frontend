@@ -1,12 +1,18 @@
 // User related types
 export interface User {
-  id: string;
-  name: string;
+  id: number;
   email: string;
-  role: string;
-  avatar?: string;
-  createdAt: string;
-  updatedAt: string;
+  name: string;
+  mobile: string | null;
+  designation: string | null;
+  aadhar: string | null;
+  user_role: string;
+  role_display: string;
+  state_code: string | null;
+  district_code: string | null;
+  block_code: string | null;
+  is_active: boolean;
+  permissions: string[];
 }
 
 export interface LoginRequest {
@@ -15,10 +21,12 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  access: string;
+  refresh: string;
   user: User;
-  token: string;
-  refreshToken: string;
-  expiresIn: number;
+  success?: boolean;
+  message?: string;
+  status_code?: number;
 }
 
 export interface RegisterRequest {

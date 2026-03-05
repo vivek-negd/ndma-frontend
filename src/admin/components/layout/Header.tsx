@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Avatar, Badge, Space, Typography, Button } from "antd";
-import { BellOutlined, UserOutlined } from "@ant-design/icons";
+import { Layout, Avatar, Badge, Space, Typography, Button, Dropdown } from "antd";
+import type { MenuProps } from "antd";
+import { BellOutlined, UserOutlined, LogoutOutlined, ProfileOutlined, SettingOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { AuthService } from "../../../services";
 import emblemIndia from "../../../assets/images/emblem-of-india.png";
 import logo from "../../../assets/images/logo.png";
 
@@ -8,7 +11,40 @@ const { Header } = Layout;
 const { Text } = Typography;
 
 const AppHeader: React.FC = () => {
-  const [mode, setMode] = useState<"UAMS" | "YAMS">("UAMS");
+  const [mode, setMode] = useState<"UAMS" | "YAMS">("YAMS");
+  const navigate = useNavigate();
+
+  const user = AuthService.getUser();
+
+  const handleLogout = () => {
+    AuthService.clearTokens();
+    AuthService.clearRole();
+    AuthService.clearUser();
+    navigate("/auth");
+  };
+
+  const profileMenuItems: MenuProps["items"] = [
+    {
+      key: "profile",
+      icon: <ProfileOutlined />,
+      label: "My Profile",
+      onClick: () => navigate("/admin/profile"),
+    },
+    {
+      key: "settings",
+      icon: <SettingOutlined />,
+      label: "Settings",
+      onClick: () => navigate("/admin/settings"),
+    },
+    { type: "divider" },
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: "Logout",
+      danger: true,
+      onClick: handleLogout,
+    },
+  ];
 
   // Inject custom CSS to override Ant Design header styles
   useEffect(() => {
@@ -146,42 +182,44 @@ const AppHeader: React.FC = () => {
           />
         </Badge>
 
-        {/* Profile card */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            backgroundColor: "#1a3d7a",
-            border: "1px solid rgba(255,255,255,0.2)",
-            borderRadius: 10,
-            padding: "6px 14px 6px 8px",
-            cursor: "pointer",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#2e5490";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#1a3d7a";
-          }}
-        >
-          <Avatar
-            src="/src/assets/images/profile.jpg"
-            size={36}
-            style={{ flexShrink: 0, border: "2px solid rgba(255,255,255,0.3)" }}
-            icon={<UserOutlined />}
-          />
-          <div style={{ lineHeight: 1.4 }}>
-            <Text style={{ color: "#ffffff", fontWeight: 600, fontSize: 14, display: "block" }}>
-              Shivani Kushwaha
-            </Text>
-            <Text style={{ color: "#4ade80", fontSize: 12, fontWeight: 500 }}>
-              SDMA Officer
-            </Text>
+        {/* Profile card with dropdown */}
+        <Dropdown menu={{ items: profileMenuItems }} trigger={["click"]} placement="bottomRight">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              backgroundColor: "#1a3d7a",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 10,
+              padding: "6px 14px 6px 8px",
+              cursor: "pointer",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#2e5490";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#1a3d7a";
+            }}
+          >
+            <Avatar
+              src="/src/assets/images/profile.jpg"
+              size={36}
+              style={{ flexShrink: 0, border: "2px solid rgba(255,255,255,0.3)" }}
+              icon={<UserOutlined />}
+            />
+            <div style={{ lineHeight: 1.4 }}>
+              <Text style={{ color: "#ffffff", fontWeight: 600, fontSize: 14, display: "block" }}>
+                {user?.name ?? "Shivani Kushwaha"}
+              </Text>
+              <Text style={{ color: "#4ade80", fontSize: 12, fontWeight: 500 }}>
+                {user?.role_display ?? "SDMA Officer"}
+              </Text>
+            </div>
           </div>
-        </div>
+        </Dropdown>
 
       </Space>
     </Header>

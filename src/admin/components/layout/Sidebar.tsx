@@ -62,7 +62,7 @@ export const Sidebar = () => {
   // Inject custom CSS for exact color matching
   useEffect(() => {
     const styleId = 'sidebar-custom-styles';
-    
+
     // Check if style already exists
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
@@ -120,7 +120,7 @@ export const Sidebar = () => {
       `;
       document.head.appendChild(style);
     }
-    
+
     return () => {
       // Cleanup style on component unmount
       const existingStyle = document.getElementById(styleId);
@@ -158,54 +158,56 @@ export const Sidebar = () => {
       label: "Dashboard",
     },
     {
-      key: "/youth-organization-workflow",
+      key: "/youth-organization-record",
       icon: <ApartmentOutlined />,
-      label: "Youth Organization Workflow",
+      label: "Youth Organization Record",
     },
     {
       key: "/training-workflow",
       icon: <ReadOutlined />,
       label: "Training Workflow",
       children: [
-          {
-            key: "/training-schedule",
-            icon: <ScheduleOutlined />,
-            label: "Training Schedule",
+        {
+          key: "/training-schedule-records",
+          icon: <ScheduleOutlined />,
+          label: "Training Schedule",
         },
-          {
-            key: "/first-day-training",
-            icon: <PlayCircleOutlined />,
-            label: "1st Day Training",
+        {
+          key: "/first-day-training-records",
+          icon: <PlayCircleOutlined />,
+          label: "1st Day Training",
         },
-          {
-            key: "/fourth-day-training",
-            icon: <FieldTimeOutlined />,
-            label: "4th Day Training",
+        {
+          key: "/fourth-day-training-records",
+          icon: <FieldTimeOutlined />,
+          label: "4th Day Training",
         },
-          {
-            key: "/seventh-day-training",
-            icon: <CheckCircleOutlined />,
-            label: "7th Day Training",
+        {
+          key: "/seventh-day-training-records",
+          icon: <CheckCircleOutlined />,
+          label: "7th Day Training",
         },
-         
+
       ],
     },
+
     {
-      key: "/bulk-volunteer-upload",
-      icon: <UploadOutlined />,
-      label: "Bulk Volunteer Upload",
-    },
-    {
-      key: "",
+      key: "/volunteer-details",
       icon: <UsergroupAddOutlined />,
       label: "Volunteer Details",
-      children: [
-        {
-          key: "/uploaded-volunteers-list",
-          icon: <FileOutlined />,
-          label: "Uploaded Volunteers List",
-        },
-      ],
+      // children: [
+      //   {
+      //     key: "/uploaded-volunteers-list",
+      //     icon: <FileOutlined />,
+      //     label: "Volunteers List",
+      //   },
+      //   {
+      //     key: "/bulk-volunteer-upload",
+      //     icon: <UploadOutlined />,
+      //     label: "Bulk Volunteer Upload",
+
+      //   },
+      // ],
     },
     {
       key: "/master-trainers-detail",
@@ -315,7 +317,7 @@ export const Sidebar = () => {
           icon: <PieChartOutlined />,
           label: "Financial View",
         },
-       
+
       ],
     },
     // {

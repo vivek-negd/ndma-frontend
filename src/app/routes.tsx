@@ -14,8 +14,7 @@ import YAMSVolunteers from "../admin/pages/volunteers/YMASVolunteers";
 import UploadedVolunteerList from "../admin/pages/volunteers/UploadedVolunteerList";
 import BatchWiseVolunteerList from "../admin/pages/volunteers/BatchWiseVolunteerList";
 import { MasterTrainersDetail } from "../admin/pages/masterTrainerDetails/MasterTrainersDeatail";
-import { YouthOrganizationWorkflow } from "../admin/pages/youthOrganizationWorkflow";
-import { FirstDayTraining, FourthDayTraining, SeventhDayTraining, TrainingSchedule } from "../admin/pages/trainingWorkflow";
+import { FourthDayTrainingForm, SeventhDayTrainingForm, TrainingScheduleForm } from "../admin/pages/trainingWorkflow";
 import { InsuranceMoU, StateMoU } from "../admin/pages/mouDetails";
 import { Distribution } from "../admin/pages/erk";
 import { Procurement } from "../admin/pages/erk";
@@ -28,6 +27,13 @@ import LoginPage from "../web/pages/auth/login";
 import Home from "../web/pages/home/Home";
 import Dashboard from "../admin/pages/Dashboard/Dashboard";
 import { AboutUs } from "../web/pages/aboutUs/AboutUs";
+import { YouthOrganisationRecords } from "../admin/pages/youthOrganizationWorkflow";
+import { YouthOrganisationForm } from "../admin/pages/youthOrganizationWorkflow/YouthOrganisationForm";
+import { FirstDayTrainingForm } from "../admin/pages/trainingWorkflow/FirstDayTrainingForm";
+import { FirstDayTrainingRecords } from "../admin/pages/trainingWorkflow/FirstDayTrainingRecords";
+import { SeventhDayTrainingRecords } from "../admin/pages/trainingWorkflow/SeventhDayTrainingRecords";
+import { FourthDayTrainingRecords } from "../admin/pages/trainingWorkflow/FourthDayTrainingRecords";
+import { TrainingScheduleRecords } from "../admin/pages/trainingWorkflow/TrainingScheduleRecords";
 
 /** Redirects to the role's default page if the current path is not allowed */
 const RoleGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -66,11 +72,16 @@ export const AppRoutes = () => {
         <Route path="/users" element={<Users />} />
         <Route path="/users/add" element={<UserForm />} />
         <Route path="/users/edit/:id" element={<UserForm />} />
-        <Route path="/youth-organization-workflow" element={<YouthOrganizationWorkflow />} />
-        <Route path="/first-day-training" element={<FirstDayTraining />} />
-        <Route path="/fourth-day-training" element={<FourthDayTraining />} />
-        <Route path="/seventh-day-training" element={<SeventhDayTraining />} />
-        <Route path="/training-schedule" element={<TrainingSchedule />} />
+        <Route path="/youth-organization-record" element={<YouthOrganisationRecords />} />
+        <Route path="/youth-organization-form" element={<YouthOrganisationForm />} />
+        <Route path="/first-day-training-form" element={<FirstDayTrainingForm />} />
+        <Route path="/first-day-training-records" element={<FirstDayTrainingRecords />} />
+        <Route path="/fourth-day-training-records" element={<FourthDayTrainingRecords />} />
+        <Route path="/fourth-day-training-form" element={<FourthDayTrainingForm />} />
+        <Route path="/seventh-day-training-records" element={<SeventhDayTrainingRecords />} />
+        <Route path="/seventh-day-training-form" element={<SeventhDayTrainingForm />} />
+        <Route path="/training-schedule-form" element={<TrainingScheduleForm />} />
+        <Route path="/training-schedule-records" element={<TrainingScheduleRecords />} />
         <Route path="/bulk-volunteer-upload" element={<BulkVolunteerUpload />} />
         <Route path="/master-trainers-detail" element={<MasterTrainersDetail />} />
         <Route path="/mou/state-mou" element={< StateMoU/>} />
@@ -90,7 +101,7 @@ export const AppRoutes = () => {
         <Route path="/statistics/financial-view" element={<FinancialViewStatistics />} />      
         <Route path="/umas-volunteer" element={<UAMSVolunteers />} />
         <Route path="/yams-volunteer" element={<YAMSVolunteers />} />
-        <Route path="/uploaded-volunteers-list" element={<UploadedVolunteerList />} />
+        <Route path="/volunteer-details" element={<UploadedVolunteerList />} />
         <Route path="/batchwise-volunteers-list/:batchId" element={<BatchWiseVolunteerList />} />
 
       </Route>

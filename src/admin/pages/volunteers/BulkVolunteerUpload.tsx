@@ -20,14 +20,17 @@ import {
   InboxOutlined,
   UploadOutlined,
   DownloadOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
 
 const BulkVolunteerUpload: React.FC = () => {
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -95,12 +98,23 @@ const BulkVolunteerUpload: React.FC = () => {
   };
 
   return (
+    <>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate(-1)}
+          style={{ borderRadius: 8 }}
+        >
+          Back
+        </Button>
+      </div>
+
     <Card
-      style={{ maxWidth: 900, margin: "30px auto" }}
+      style={{ maxWidth: "100%", marginBottom: 16 }}
       bordered
     >
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
-        <Title level={4}>Bulk Upload Volunteers</Title>
+        <Title level={4} style={{ margin: 0 }}>Bulk Upload Volunteers</Title>
 
         <Alert
           message="Upload Instructions"
@@ -183,7 +197,7 @@ const BulkVolunteerUpload: React.FC = () => {
               </Form.Item>
             </Col>
 
-            <Col xs={24} sm={12} md={8}>
+            {/* <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Upload Option"
                 name="uploadOption"
@@ -195,7 +209,7 @@ const BulkVolunteerUpload: React.FC = () => {
                   <Select.Option value="replace">Replace All Volunteers</Select.Option>
                 </Select>
               </Form.Item>
-            </Col>
+            </Col> */}
           </Row>
         </Form>
 
@@ -240,6 +254,7 @@ const BulkVolunteerUpload: React.FC = () => {
         </Space>
       </Space>
     </Card>
+    </>
   );
 };
 

@@ -10,6 +10,7 @@ import { TrainingUpdatesSection } from "./TrainingUpdatesSection";
 import { SocialMediaSection } from "./SocialMediaSection";
 import { StateLogosSection } from "./StateLogosSection";
 import { Footer } from "../../components/layouts/Footer";
+import IndiaMap from "../../../admin/pages/Dashboard/IndiaMap";
 
 const Home = () => {
   return (
@@ -20,7 +21,8 @@ const Home = () => {
       <LeadershipSection />
       <VideosGallery />
       <PhotoGallery />
-      <VolunteerPresenceSection />
+      <IndiaMap/>
+      {/* <VolunteerPresenceSection /> */}
       <AchievementsSection />
       <TrainingUpdatesSection />
       <SocialMediaSection />

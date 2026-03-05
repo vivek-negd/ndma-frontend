@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../../config'
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 100000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,6 +15,10 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    // Bypass ngrok browser warning for GET requests via query param (avoids CORS preflight)
+    if (config.method?.toLowerCase() === 'get') {
+      config.params = { ...config.params, 'ngrok-skip-browser-warning': 'true' }
     }
     return config
   },

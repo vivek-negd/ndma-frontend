@@ -10,9 +10,10 @@ import FinancialOverview from "./FinancialOverview";
 import DailyStatistics from "./DailyStatistics";
 import GeographicView from "../../components/layout/GeographicView";
 import ProgrammeOverview from "./ProgrammeOverview";
+import LatestUpdates from "./LatestUpdate";
+import IndiaMap from "./IndiaMap";
 
 const { Content } = Layout;
-
 const Dashboard = () => {
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -25,12 +26,14 @@ const Dashboard = () => {
             }}
           >
             <div style={{ padding: "0px" }}>
+             <LatestUpdates />
               <NationalOverview />
               <CompositionSection />
               <VolunteerInsights />
               <FinancialOverview />
               <ProgrammeOverview />
               <GeographicView />
+              {/* <IndiaMap/> */}
               <DailyStatistics />
             </div>
           </Content>

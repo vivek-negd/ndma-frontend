@@ -1,4 +1,4 @@
-export { TrainingSchedule } from "./TrainingSchedule";
-export { FirstDayTraining } from "./FirstDayTraining";
-export { FourthDayTraining } from "./FourthDayTraining";
-export { SeventhDayTraining } from "./SeventhDayTraining";
+export { TrainingScheduleForm } from "./TrainingScheduleForm";
+export { FirstDayTrainingForm } from "./FirstDayTrainingForm";
+export { FourthDayTrainingForm } from "./FourthDayTrainingForm";
+export { SeventhDayTrainingForm } from "./SeventhDayTrainingForm";

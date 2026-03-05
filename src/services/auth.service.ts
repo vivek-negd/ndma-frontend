@@ -4,8 +4,8 @@ import { ApiResponse } from '../types/common.types';
 
 export class AuthService {
   // Authentication endpoints
-  static async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const response = await commonEndpoint.post<ApiResponse<LoginResponse>>('/auth/login', credentials);
+  static async login(credentials: LoginRequest): Promise<LoginResponse> {
+    const response = await commonEndpoint.post<LoginResponse>('/auth/login/', credentials);
     return response.data;
   }
 
@@ -79,6 +79,20 @@ export class AuthService {
 
   static clearRole(): void {
     localStorage.removeItem('user_role');
+  }
+
+  // User data management
+  static setUser(user: User): void {
+    localStorage.setItem('user', JSON.stringify(user));
+  }
+
+  static getUser(): User | null {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+  }
+
+  static clearUser(): void {
+    localStorage.removeItem('user');
   }
 
   static isAuthenticated(): boolean {

@@ -1,10 +1,11 @@
-export type UserRole = 'SUPERADMIN' | 'NATIONAL_ADMIN' | 'ORGANIZATION';
+export type UserRole = 'SUPERADMIN' | 'NDMA_ADMIN' | 'YOUTH_ORG_ADMIN' | 'SDMA_ADMIN';
 
 /** Default landing page after login per role */
 export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
   SUPERADMIN: '/dashboard',
-  NATIONAL_ADMIN: '/dashboard',
-  ORGANIZATION: '/dashboard',
+  NDMA_ADMIN: '/dashboard',
+  YOUTH_ORG_ADMIN: '/dashboard',
+  SDMA_ADMIN: '/dashboard',
 };
 
 /**
@@ -14,8 +15,9 @@ export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
  */
 export const ROLE_MENU_KEYS: Record<UserRole, string[] | '*'> = {
   SUPERADMIN: '*',
-  NATIONAL_ADMIN: ['/dashboard', '/training-workflow', '/training-schedule', '/first-day-training', '/fourth-day-training', '/seventh-day-training'],
-  ORGANIZATION: ['/bulk-volunteer-upload'],
+  NDMA_ADMIN: ['/dashboard','/youth-organization-form','/youth-organization-record','/volunteer-details','/bulk-volunteer-upload','/training-workflow', '/training-schedule', '/first-day-training', '/fourth-day-training', '/seventh-day-training'],
+  YOUTH_ORG_ADMIN: ['/dashboard','/youth-organization-record','/youth-organization-form'],
+  SDMA_ADMIN: ['/dashboard','/training-workflow','/training-schedule-records', '/first-day-training-records', '/fourth-day-training-records', '/seventh-day-training-records', '/training-schedule-form', '/first-day-training-form', '/fourth-day-training-form', '/seventh-day-training-form'],
 };
 
 /**
@@ -24,14 +26,20 @@ export const ROLE_MENU_KEYS: Record<UserRole, string[] | '*'> = {
  */
 export const ROLE_ALLOWED_PATHS: Record<UserRole, string[] | '*'> = {
   SUPERADMIN: '*',
-  NATIONAL_ADMIN: [
+  NDMA_ADMIN: [
     '/dashboard',
-    '/training-schedule',
+    '/bulk-volunteer-upload',
+    '/youth-organization-record',
+    '/youth-organization-form',
+    '/volunteer-details',
+    '/training-schedule-form',
     '/first-day-training',
     '/fourth-day-training',
     '/seventh-day-training',
+    '/volunteer-details',
   ],
-  ORGANIZATION: ['/bulk-volunteer-upload'],
+  YOUTH_ORG_ADMIN: ['/dashboard','/youth-organization-record','/youth-organization-form'],
+  SDMA_ADMIN: ['/dashboard','/training-workflow','/training-schedule-records', '/first-day-training-records', '/fourth-day-training-records', '/seventh-day-training-records', '/training-schedule-form', '/first-day-training-form', '/fourth-day-training-form', '/seventh-day-training-form'],
 };
 
 export function isRoleAllowed(role: string | null, path: string): boolean {

@@ -14,21 +14,24 @@ import {
   Upload,
 } from "antd";
 import {
+  ArrowLeftOutlined,
   SaveOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
-export const FirstDayTraining = () => {
+export const SeventhDayTrainingForm = () => {
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
-      console.log("First Day Training Data:", values);
-      message.success("First day training saved successfully!");
+      console.log("Seventh Day Training Data:", values);
+      message.success("Seventh day training saved successfully!");
       form.resetFields();
     } catch (error) {
       message.error("Failed to save training data!");
@@ -38,12 +41,32 @@ export const FirstDayTraining = () => {
   };
 
   return (
-    <div style={{ padding: "24px", background: "#f5f5f5" }}>
-      <Card
-        title="First Day Training"
-        style={{ maxWidth: 1200, margin: "0 auto" }}
-        bordered
-      >
+    <div style={{ width: "100%", background: "#f5f5f5" }}>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+        <div>
+          <Text style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>
+            Training Workflow /&nbsp;
+            <span style={{ color: "#2563eb", fontWeight: 500 }}>Add New 7th Day Training</span>
+          </Text>
+          <Title level={3} style={{ margin: 0, fontWeight: 700, color: "#111827" }}>
+            Add New 7th Day Training Record
+          </Title>
+          <Text style={{ fontSize: 13, color: "#6b7280" }}>
+            Fill in the details and upload media from the final day.
+          </Text>
+        </div>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          style={{ borderRadius: 8 }}
+          onClick={() => navigate(-1)}
+        >
+          Back
+        </Button>
+      </div>
+      {/* ── Form card ── */}
+      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: "24px" }}>
+
         <Form
           form={form}
           layout="vertical"
@@ -98,9 +121,9 @@ export const FirstDayTraining = () => {
                 name="numberOfVolunteers"
                 rules={[{ required: true, message: 'Please enter number of volunteers!' }]}
               >
-                <Input 
-                  type="number" 
-                  placeholder="Enter Number of Volunteers" 
+                <Input
+                  type="number"
+                  placeholder="Enter Number of Volunteers"
                   min={1}
                 />
               </Form.Item>
@@ -132,8 +155,8 @@ export const FirstDayTraining = () => {
                 name="trainersDetails"
                 rules={[{ required: true, message: 'Please enter trainers details!' }]}
               >
-                <Input.TextArea 
-                  placeholder="Enter Trainers Details" 
+                <Input.TextArea
+                  placeholder="Enter Trainers Details"
                   rows={3}
                 />
               </Form.Item>
@@ -147,7 +170,7 @@ export const FirstDayTraining = () => {
                 name="date"
                 rules={[{ required: true, message: 'Please select date!' }]}
               >
-                <DatePicker 
+                <DatePicker
                   style={{ width: "100%" }}
                   placeholder="Select Date"
                 />
@@ -170,28 +193,27 @@ export const FirstDayTraining = () => {
             </Col>
           </Row>
 
-          <Form.Item style={{ textAlign: "center", marginTop: 24 }}>
-            <Space>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={loading}
-                size="large"
-              >
-                Save Training
-              </Button>
-              <Button
-                type="default"
-                icon={<UploadOutlined />}
-                size="large"
-              >
-                Upload Files
-              </Button>
-            </Space>
-          </Form.Item>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<SaveOutlined />}
+              loading={loading}
+              size="large"
+              style={{ borderRadius: 8, background: "#1d4ed8", border: "none" }}
+            >
+              Save Training
+            </Button>
+            <Button
+              type="default"
+              icon={<UploadOutlined />}
+              size="large"
+            >
+              Upload Files
+            </Button>
+          </div>
         </Form>
-      </Card>
+      </div>
     </div>
   );
 };
