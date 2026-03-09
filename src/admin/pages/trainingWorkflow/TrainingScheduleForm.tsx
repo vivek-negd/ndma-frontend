@@ -35,23 +35,9 @@ export const TrainingScheduleForm: React.FC = () => {
       try {
         setStatesLoading(true);
         const res = await CommonService.getStates();
-          
-        // Handle direct array response
-        if (Array.isArray(res)) {
-          setStates(res as any);
-        }
-        // Handle wrapped response { data: [...] }
-        else if (res.data && Array.isArray(res.data)) {
-          setStates(res.data as any);
-        }
-        // Handle paginated response { data: { data: [...] } }
-        else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-          setStates((res.data as any).data as any);
-        } else {
-          setStates([]);
-        }
-      } catch (error) {
-        console.error("State fetch error:", error);
+        console.log(res,"state");
+        setStates(res ?? (res as any) ?? []);
+      } catch {
         message.error("Failed to load states");
       } finally {
         setStatesLoading(false);
@@ -62,43 +48,11 @@ export const TrainingScheduleForm: React.FC = () => {
       try {
         setOrgTypesLoading(true);
         const res = await CommonService.getOrgTypes();
-        console.log('Organization Types raw response:', res);
-        
-        // Handle API response { organization_types: [...] }
-        if (res.organization_types && Array.isArray(res.organization_types)) {
-          console.log('✓ Organization_types API response - Found', res.organization_types.length, 'org types');
-          setOrgTypes(res.organization_types as any);
+        if(res.status_code === 200){
+          console.log(res,"org types");
+          setOrgTypes((res.organization_types as any) ?? []);
         }
-        // Handle direct array response
-        else if (Array.isArray(res)) {
-          console.log('✓ Direct array response - Found', res.length, 'org types');
-          setOrgTypes(res as any);
-        }
-        // Handle wrapped response { data: [...] }
-        else if (res.data && Array.isArray(res.data)) {
-          console.log('✓ Wrapped array response - Found', res.data.length, 'org types');
-          setOrgTypes(res.data as any);
-        }
-        // Handle org-types API response { data: { org_types: [...] } }
-        else if (res.data && (res.data as any).org_types && Array.isArray((res.data as any).org_types)) {
-          console.log('✓ Org-types API response - Found', (res.data as any).org_types.length, 'org types');
-          setOrgTypes((res.data as any).org_types as any);
-        }
-        // Handle organizations API response { data: { organizations: [...] } }
-        else if (res.data && (res.data as any).organizations && Array.isArray((res.data as any).organizations)) {
-          console.log('✓ Organizations API response - Found', (res.data as any).organizations.length, 'org types');
-          setOrgTypes((res.data as any).organizations as any);
-        }
-        // Handle paginated response { data: { data: [...] } }
-        else if (res.data && typeof res.data === 'object' && 'data' in res.data && Array.isArray((res.data as any).data)) {
-          console.log('✓ Paginated response - Found', (res.data as any).data.length, 'org types');
-          setOrgTypes((res.data as any).data as any);
-        } else {
-          console.log('✗ No org types found - Response structure:', JSON.stringify(res, null, 2));
-          setOrgTypes([]);
-        }
-      } catch (error) {
-        console.error("Org types fetch error:", error);
+      } catch {
         message.error("Failed to load organization types");
       } finally {
         setOrgTypesLoading(false);
@@ -155,34 +109,10 @@ export const TrainingScheduleForm: React.FC = () => {
     
     try {
       setDistrictsLoading(true);
-      const res = await CommonService.getDistrictsByState(String(stateId));
-      console.log('Districts response:', res);
-      
-      // Handle direct array response
-      if (Array.isArray(res)) {
-        console.log('Direct array response');
-        setDistricts(res as any);
-      }
-      // Handle wrapped response { data: [...] }
-      else if (res.data && Array.isArray(res.data)) {
-        console.log('Wrapped array response');
-        setDistricts(res.data as any);
-      }
-      // Handle district API response { data: { districts: [...] } }
-      else if (res.data && (res.data as any).districts && Array.isArray((res.data as any).districts)) {
-        console.log('District API response');
-        setDistricts((res.data as any).districts as any);
-      }
-      // Handle paginated response { data: { data: [...] } }
-      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-        console.log('Paginated response');
-        setDistricts((res.data as any).data as any);
-      } else {
-        console.log('No districts found');
-        setDistricts([]);
-      }
-    } catch (error) {
-      console.error("Districts fetch error:", error);
+      const res = await CommonService.getDistrictsByState(stateId);
+      console.log(res?.data?.districts? res : [], "districts");
+      setDistricts(Array.isArray(res?.data?.districts) ? res.data.districts : []);
+    } catch {
       message.error("Failed to load districts");
       setDistricts([]);
     } finally {
@@ -275,7 +205,7 @@ export const TrainingScheduleForm: React.FC = () => {
                   optionFilterProp="children"
                   onChange={handleStateChange}
                 >
-                  {states.map((s) => (
+                  {states?.map((s) => (
                     <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
                   ))}
                 </Select>
@@ -291,7 +221,7 @@ export const TrainingScheduleForm: React.FC = () => {
                   optionFilterProp="children"
                   disabled={districts.length === 0}
                 >
-                  {districts.map((d) => (
+                  {districts?.map((d) => (
                     <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
                   ))}
                 </Select>

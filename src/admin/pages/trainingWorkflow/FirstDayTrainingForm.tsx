@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Typography,
@@ -18,15 +18,18 @@ import {
   ArrowLeftOutlined,
   SaveOutlined,
   UploadOutlined,
+  PictureOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { CommonService, AuthService } from "../../../services";
+import { CommonService } from "../../../services";
 const { Title, Text } = Typography;
 
 export const FirstDayTrainingForm = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [fileList, setFileList] = useState<any[]>([]);
   const [states, setStates] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [orgTypes, setOrgTypes] = useState<any[]>([]);
@@ -35,159 +38,48 @@ export const FirstDayTrainingForm = () => {
   const [orgTypesLoading, setOrgTypesLoading] = useState(false);
 
   useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        setStatesLoading(true);
+        const res = await CommonService.getStates();
+        console.log(res, "state");
+        setStates(res ?? (res as any) ?? []);
+      } catch {
+        message.error("Failed to load states");
+      } finally {
+        setStatesLoading(false);
+      }
+    };
+
+    const fetchOrgTypes = async () => {
+      try {
+        setOrgTypesLoading(true);
+        const res = await CommonService.getOrgTypes();
+        if (res.status_code === 200) {
+          console.log(res, "org types");
+          setOrgTypes((res.organization_types as any) ?? []);
+        }
+      } catch {
+        message.error("Failed to load organization types");
+      } finally {
+        setOrgTypesLoading(false);
+      }
+    };
+
     fetchStates();
     fetchOrgTypes();
   }, []);
 
-  // Auto-fill state from logged-in user after states load
-  useEffect(() => {
-    if (states.length > 0) {
-      const userState = AuthService.getUserState();
-      if (userState.state_id) {
-        console.log('Auto-filling state:', userState);
-        form.setFieldValue('state', userState.state_id);
-        // Fetch districts for the auto-filled state
-        handleStateChange(userState.state_id);
-      } else {
-        console.log('No user state found');
-      }
-    }
-  }, [states]);
-
-  // Auto-fill district after districts load
-  useEffect(() => {
-    if (districts.length > 0) {
-      const userDistrict = AuthService.getUserDistrict();
-      if (userDistrict.district_id) {
-        console.log('Auto-filling district:', userDistrict);
-        // Check if the district exists in the loaded districts
-        const districtExists = districts.some((d: any) => d.id === userDistrict.district_id);
-        if (districtExists) {
-          form.setFieldValue('district', userDistrict.district_id);
-        } else {
-          console.log('District not found in loaded list:', userDistrict.district_id);
-        }
-      } else {
-        console.log('No user district found');
-      }
-    }
-  }, [districts]);
-
-  const fetchStates = async () => {
-    try {
-      setStatesLoading(true);
-      const res = await CommonService.getStates();
-      // Handle direct array response
-      if (Array.isArray(res)) {
-        setStates(res as any);
-      }
-      // Handle wrapped response { data: [...] }
-      else if (res.data && Array.isArray(res.data)) {
-        setStates(res.data as any);
-      }
-      // Handle paginated response { data: { data: [...] } }
-      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-        setStates((res.data as any).data as any);
-      } else {
-        setStates([]);
-      }
-    } catch (error) {
-      console.error("State fetch error:", error);
-      message.error("Failed to load states");
-    } finally {
-      setStatesLoading(false);
-    }
-  };
-
-  const fetchOrgTypes = async () => {
-    try {
-      setOrgTypesLoading(true);
-      const res = await CommonService.getOrgTypes();
-      console.log('Organization Types raw response:', res);
-      
-      // Handle API response { organization_types: [...] }
-      if (res.organization_types && Array.isArray(res.organization_types)) {
-        console.log('✓ Organization_types API response - Found', res.organization_types.length, 'org types');
-        setOrgTypes(res.organization_types as any);
-      }
-      // Handle direct array response
-      else if (Array.isArray(res)) {
-        console.log('✓ Direct array response - Found', res.length, 'org types');
-        setOrgTypes(res as any);
-      }
-      // Handle wrapped response { data: [...] }
-      else if (res.data && Array.isArray(res.data)) {
-        console.log('✓ Wrapped array response - Found', res.data.length, 'org types');
-        setOrgTypes(res.data as any);
-      }
-      // Handle org-types API response { data: { org_types: [...] } }
-      else if (res.data && (res.data as any).org_types && Array.isArray((res.data as any).org_types)) {
-        console.log('✓ Org-types API response - Found', (res.data as any).org_types.length, 'org types');
-        setOrgTypes((res.data as any).org_types as any);
-      }
-      // Handle organizations API response { data: { organizations: [...] } }
-      else if (res.data && (res.data as any).organizations && Array.isArray((res.data as any).organizations)) {
-        console.log('✓ Organizations API response - Found', (res.data as any).organizations.length, 'org types');
-        setOrgTypes((res.data as any).organizations as any);
-      }
-      // Handle paginated response { data: { data: [...] } }
-      else if (res.data && typeof res.data === 'object' && 'data' in res.data && Array.isArray((res.data as any).data)) {
-        console.log('✓ Paginated response - Found', (res.data as any).data.length, 'org types');
-        setOrgTypes((res.data as any).data as any);
-      } else {
-        console.log('✗ No org types found - Response structure:', JSON.stringify(res, null, 2));
-        setOrgTypes([]);
-      }
-    } catch (error) {
-      console.error("Org types fetch error:", error);
-      message.error("Failed to load organization types");
-    } finally {
-      setOrgTypesLoading(false);
-    }
-  };
-
-  const handleStateChange = async (stateId: string | number) => {
-    console.log('State selected:', stateId);
+  const handleStateChange = async (stateId: string) => {
     form.setFieldValue("district", undefined);
     setDistricts([]);
-    
-    if (!stateId) {
-      setDistricts([]);
-      return;
-    }
-    
     try {
       setDistrictsLoading(true);
-      const res = await CommonService.getDistrictsByState(String(stateId));
-      console.log('Districts response:', res);
-      
-      // Handle direct array response
-      if (Array.isArray(res)) {
-        console.log('Direct array response');
-        setDistricts(res as any);
-      }
-      // Handle wrapped response { data: [...] }
-      else if (res.data && Array.isArray(res.data)) {
-        console.log('Wrapped array response');
-        setDistricts(res.data as any);
-      }
-      // Handle district API response { data: { districts: [...] } }
-      else if (res.data && (res.data as any).districts && Array.isArray((res.data as any).districts)) {
-        console.log('District API response');
-        setDistricts((res.data as any).districts as any);
-      }
-      // Handle paginated response { data: { data: [...] } }
-      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-        console.log('Paginated response');
-        setDistricts((res.data as any).data as any);
-      } else {
-        console.log('No districts found');
-        setDistricts([]);
-      }
-    } catch (error) {
-      console.error("Districts fetch error:", error);
+      const res = await CommonService.getDistrictsByState(stateId);
+      console.log(res?.data?.districts ? res : [], "districts");
+      setDistricts(Array.isArray(res?.data?.districts) ? res.data.districts : []);
+    } catch {
       message.error("Failed to load districts");
-      setDistricts([]);
     } finally {
       setDistrictsLoading(false);
     }
@@ -196,9 +88,26 @@ export const FirstDayTrainingForm = () => {
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
-      console.log("First Day Training Data:", values);
+      const formData = new FormData();
+
+      // Append form fields
+      Object.entries(values).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as string);
+        }
+      });
+
+      // Append photos
+      fileList.forEach((file) => {
+        formData.append("photos", file);
+      });
+
+      console.log("First Day Training Payload:");
+      formData.forEach((val, key) => console.log(key, val));
+
       message.success("First day training saved successfully!");
       form.resetFields();
+      setFileList([]);
     } catch (error) {
       message.error("Failed to save training data!");
     } finally {
@@ -241,58 +150,39 @@ export const FirstDayTrainingForm = () => {
         >
           <Row gutter={16}>
             <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="State"
-                name="state"
-                rules={[{ required: true, message: 'Please select state!' }]}
-              >
-                <Select 
+              <Form.Item label="State" name="state" rules={[{ required: true, message: "Please select state!" }]}>
+                <Select
                   placeholder="Select State"
                   loading={statesLoading}
+                  showSearch
+                  optionFilterProp="children"
                   onChange={handleStateChange}
                 >
-                  {states.map((state: any) => (
-                    <Select.Option key={state.id} value={state.id}>
-                      {state.name}
-                    </Select.Option>
+                  {states.map((s) => (
+                    <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
 
             <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="District"
-                name="district"
-                rules={[{ required: true, message: 'Please select district!' }]}
-              >
-                <Select 
+              <Form.Item label="District" name="district" rules={[{ required: true, message: "Please select district!" }]}>
+                <Select
                   placeholder="Select District"
                   loading={districtsLoading}
+                  showSearch
+                  optionFilterProp="children"
                   disabled={districts.length === 0}
-                  optionLabelProp="children"
                 >
-                  {districts.length > 0 ? (
-                    districts.map((district: any) => (
-                      <Select.Option key={district.id} value={district.id}>
-                        {district.name}
-                      </Select.Option>
-                    ))
-                  ) : (
-                    <Select.Option value="" disabled>
-                      {districtsLoading ? 'Loading...' : 'Select state first'}
-                    </Select.Option>
-                  )}
+                  {districts.map((d) => (
+                    <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
 
             <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="Organization"
-                name="organization"
-                rules={[{ required: true, message: 'Please select organization!' }]}
-              >
+              <Form.Item label="Organization" name="organization" rules={[{ required: true, message: "Please select organization!" }]}>
                 <Select
                   placeholder="Select Organization Type"
                   loading={orgTypesLoading}
@@ -308,7 +198,7 @@ export const FirstDayTrainingForm = () => {
           </Row>
 
           <Row gutter={16}>
-            <Col xs={24} sm={12} md={6}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="No. of Vol."
                 name="numberOfVolunteers"
@@ -322,7 +212,7 @@ export const FirstDayTrainingForm = () => {
               </Form.Item>
             </Col>
 
-            <Col xs={24} sm={12} md={6}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Batch No."
                 name="batchNumber"
@@ -332,7 +222,7 @@ export const FirstDayTrainingForm = () => {
               </Form.Item>
             </Col>
 
-            <Col xs={24} sm={12} md={6}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Institute Details"
                 name="instituteDetails"
@@ -341,8 +231,9 @@ export const FirstDayTrainingForm = () => {
                 <Input placeholder="Enter Institute Details" />
               </Form.Item>
             </Col>
-
-            <Col xs={24} sm={12} md={6}>
+          </Row>
+          <Row gutter={16}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Trainers Details"
                 name="trainersDetails"
@@ -354,10 +245,10 @@ export const FirstDayTrainingForm = () => {
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          <Row gutter={16}>
-            <Col xs={24} sm={12} md={12}>
+
+
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Date"
                 name="date"
@@ -369,43 +260,67 @@ export const FirstDayTrainingForm = () => {
                 />
               </Form.Item>
             </Col>
-
-            <Col xs={24} sm={12} md={12}>
-              <Form.Item
-                label="Upload Option"
-                name="uploadOption"
-                rules={[{ required: true, message: 'Please select upload option!' }]}
-              >
-                <Select placeholder="Select Upload Option">
-                  <Select.Option value="photos">Upload Photos</Select.Option>
-                  <Select.Option value="documents">Upload Documents</Select.Option>
-                  <Select.Option value="attendance">Upload Attendance</Select.Option>
-                  <Select.Option value="materials">Upload Training Materials</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
           </Row>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
-             <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={loading}
-                size="large"
-                style={{ borderRadius: 8, background: "#1d4ed8", border: "none" }}
+          {/* ── Upload Media ── */}
+          <div style={{ marginTop: 16, border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden" }}>
+            {/* Header */}
+            <div style={{ background: "#f8fafc", borderBottom: "1px solid #e5e7eb", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <PictureOutlined style={{ fontSize: 16, color: "#2563eb" }} />
+                <span style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>Upload Training Photos</span>
+              </div>
+              {fileList.length > 0 && (
+                <span style={{ fontSize: 12, background: "#dbeafe", color: "#1d4ed8", padding: "2px 10px", borderRadius: 20, fontWeight: 500 }}>
+                  {fileList.length} / 10 uploaded
+                </span>
+              )}
+            </div>
+
+            {/* Dragger zone */}
+            <div style={{ padding: 16 }}>
+              <Upload.Dragger
+                multiple
+                accept="image/*"
+                fileList={fileList}
+                beforeUpload={(file) => {
+                  setFileList((prev) => [...prev, file]);
+                  return false;
+                }}
+                onRemove={(file) => {
+                  setFileList((prev) => prev.filter((f) => f.uid !== file.uid));
+                }}
+                listType="picture-card"
+                showUploadList={{ showRemoveIcon: true }}
+                style={{ background: "#f0f7ff", borderColor: "#93c5fd", borderRadius: 8 }}
               >
-                Save Training
-              </Button>
-             <Button
-                type="default"
-                icon={<UploadOutlined />}
-                size="large"
-              >
-                Upload Files
-              </Button>
+                <div style={{ padding: "12px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 44, height: 44, background: "#dbeafe", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <UploadOutlined style={{ fontSize: 20, color: "#2563eb" }} />
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: "#1d4ed8" }}>Click or drag photos here</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>Supports JPG, PNG, WEBP · Max 10 files</div>
+                </div>
+              </Upload.Dragger>
+            </div>
           </div>
-         
+
+
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<SaveOutlined />}
+              loading={loading}
+              size="large"
+              style={{ borderRadius: 8, background: "#1d4ed8", border: "none" }}
+            >
+              Save Training
+            </Button>
+
+          </div>
+
         </Form>
       </div>
     </div>

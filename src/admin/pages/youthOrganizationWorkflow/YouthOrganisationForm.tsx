@@ -29,6 +29,7 @@ import {
 } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 import { useNavigate } from "react-router-dom";
+import { CommonService } from "../../../services";
 import Paragraph from "antd/es/typography/Paragraph";
 import { CommonService, AuthService } from "../../../services";
 
@@ -46,6 +47,61 @@ export const YouthOrganisationForm: React.FC = () => {
   const [orgTypes, setOrgTypes] = useState<any[]>([]);
   const [statesLoading, setStatesLoading] = useState(false);
   const [uploadResult, setUploadResult] = useState<any>(null);
+
+  const [states, setStates] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [orgTypes, setOrgTypes] = useState<any[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
+  const [orgTypesLoading, setOrgTypesLoading] = useState(false);
+
+  useEffect(() => {
+     const fetchStates = async () => {
+       try {
+         setStatesLoading(true);
+         const res = await CommonService.getStates();
+         console.log(res,"state");
+         setStates(res ?? (res as any) ?? []);
+       } catch {
+         message.error("Failed to load states");
+       } finally {
+         setStatesLoading(false);
+       }
+     };
+ 
+     const fetchOrgTypes = async () => {
+       try {
+         setOrgTypesLoading(true);
+         const res = await CommonService.getOrgTypes();
+         if(res.status_code === 200){
+           console.log(res,"org types");
+           setOrgTypes((res.organization_types as any) ?? []);
+         }
+       } catch {
+         message.error("Failed to load organization types");
+       } finally {
+         setOrgTypesLoading(false);
+       }
+     };
+ 
+     fetchStates();
+     fetchOrgTypes();
+   }, []);
+
+   const handleStateChange = async (stateId: string) => {
+      form.setFieldValue("district", undefined);
+      setDistricts([]);
+      try {
+        setDistrictsLoading(true);
+        const res = await CommonService.getDistrictsByState(stateId);
+        console.log(res?.data?.districts? res : [], "districts");
+        setDistricts(Array.isArray(res?.data?.districts) ? res.data.districts : []);
+      } catch {
+        message.error("Failed to load districts");
+      } finally {
+        setDistrictsLoading(false);
+      }
+    };
 
   const allowedTypes = [
     "application/vnd.ms-excel",
@@ -283,61 +339,66 @@ export const YouthOrganisationForm: React.FC = () => {
           layout="vertical"
           style={{ marginBottom: 0 }}
         >
-          <Spin spinning={statesLoading}>
-            <Row gutter={16}>
-              <Col xs={24} sm={12} md={8}>
-                <Form.Item
-                  label="State"
-                  name="state"
-                  rules={[{ required: true, message: 'Please select state!' }]}
+          <Row gutter={16}>
+            <Col xs={24} sm={12} md={8}>
+              <Form.Item
+                label="State"
+                name="state"
+                rules={[{ required: true, message: 'Please select state!' }]}
+              >
+                <Select
+                  placeholder="Select State"
+                  loading={statesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  onChange={handleStateChange}
                 >
-                  <Select 
-                    placeholder="Select State"
-                    onChange={handleStateChange}
-                    loading={statesLoading}
-                  >
-                    {states.map((state: any) => (
-                      <Select.Option key={state.id} value={state.id}>
-                        {state.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
+                  {states.map((s) => (
+                    <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
 
-              <Col xs={24} sm={12} md={8}>
-                <Form.Item
-                  label="District"
-                  name="district"
-                  rules={[{ required: true, message: 'Please select district!' }]}
+            <Col xs={24} sm={12} md={8}>
+              <Form.Item
+                label="District"
+                name="district"
+                rules={[{ required: true, message: 'Please select district!' }]}
+              >
+                <Select
+                  placeholder="Select District"
+                  loading={districtsLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={districts.length === 0}
                 >
-                  <Select placeholder="Select District">
-                    {districts.map((district: any) => (
-                      <Select.Option key={district.id} value={district.id}>
-                        {district.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
+                  {districts.map((d) => (
+                    <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
 
-              <Col xs={24} sm={12} md={8}>
-                <Form.Item
-                  label="Organization"
-                  name="organization"
-                  rules={[{ required: true, message: 'Please select organization!' }]}
+            <Col xs={24} sm={12} md={8}>
+              <Form.Item
+                label="Organization"
+                name="organization"
+                rules={[{ required: true, message: 'Please select organization!' }]}
+              >
+                <Select
+                  placeholder="Select Organization"
+                  loading={orgTypesLoading}
+                  showSearch
+                  optionFilterProp="children"
                 >
-                  <Select placeholder="Select Organization Type">
-                    {orgTypes.map((org: any) => (
-                      <Select.Option key={org.id} value={org.id}>
-                        {org.name || org.code}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
-          </Spin>
+                  {orgTypes.map((o) => (
+                    <Select.Option key={o.id} value={o.id}>{o.name}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Row gutter={16}>
             <Col xs={24} sm={12} md={8}>

@@ -1,5 +1,8 @@
 // API response types
 export interface ApiResponse<T = any> {
+  districts?: any;
+  organization_types: any;
+  status_code: number;
   success: boolean;
   data: T;
   message: string;

@@ -12,18 +12,30 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem("token");
+
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    // Bypass ngrok browser warning for GET requests via query param (avoids CORS preflight)
-    if (config.method?.toLowerCase() === 'get') {
-      config.params = { ...config.params, 'ngrok-skip-browser-warning': 'true' }
-    }
-    return config
+
+    // Important for ngrok
+    config.headers["ngrok-skip-browser-warning"] = "true";
+
+    return config;
   },
   (error) => Promise.reject(error)
-)
+);
+
+// apiClient.interceptors.request.use(
+//   (config) => {
+//     const token = localStorage.getItem('token')
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`
+//     }
+//     return config
+//   },
+//   (error) => Promise.reject(error)
+// )
 
 // Response interceptor
 apiClient.interceptors.response.use(
