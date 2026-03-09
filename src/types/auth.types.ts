@@ -8,9 +8,13 @@ export interface User {
   aadhar: string | null;
   user_role: string;
   role_display: string;
-  state_code: string | null;
-  district_code: string | null;
-  block_code: string | null;
+  state_code?: string | null;
+  state_id?: number | null;
+  state_name?: string | null;
+  district_code?: string | null;
+  district_id?: number | null;
+  district_name?: string | null;
+  block_code?: string | null;
   is_active: boolean;
   permissions: string[];
 }

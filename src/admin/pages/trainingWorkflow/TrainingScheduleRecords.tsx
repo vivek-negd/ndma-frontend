@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Button,
@@ -7,6 +7,7 @@ import {
   Table,
   Image,
   Badge,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -14,34 +15,24 @@ import {
   PictureOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { CommonService, AuthService } from "../../../services";
 
 const { Title, Text } = Typography;
 
-/* ── Dummy data ── */
-interface Record {
-  key: string;
+/* ── Record interface ── */
+interface TrainingScheduleRecord {
+  id?: string;
   state: string;
   district: string;
   organization: string;
   volunteers: number;
-  date: string;
-  media: string[];
+  startDate: string;
+  endDate: string;
+  batchNo: string;
+  venue: string;
+  trainersDetails: string;
+  status: string;
 }
-
-const ALL_RECORDS: Record[] = [
-  { key: "1",  state: "Jharkhand",       district: "Ranchi",      organization: "NSS (National Service Scheme)",   volunteers: 90,  date: "09 Jun 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "2",  state: "Assam",           district: "Guwahati",    organization: "Bharat Scouts & Guides",          volunteers: 60,  date: "02 Jun 2025", media: [] },
-  { key: "3",  state: "Madhya Pradesh",  district: "Bhopal",      organization: "NCC (National Cadet Corps)",      volunteers: 120, date: "28 May 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "4",  state: "Rajasthan",       district: "Jaipur",      organization: "NYKS (Nehru Yuva Kendra)",        volunteers: 95,  date: "22 May 2025", media: [] },
-  { key: "5",  state: "Odisha",          district: "Bhubaneswar", organization: "NSS (National Service Scheme)",   volunteers: 110, date: "18 May 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "6",  state: "Bihar",           district: "Patna",       organization: "NCC (National Cadet Corps)",      volunteers: 80,  date: "14 May 2025", media: [] },
-  { key: "7",  state: "West Bengal",     district: "Kolkata",     organization: "Bharat Scouts & Guides",          volunteers: 150, date: "10 May 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "8",  state: "Uttar Pradesh",   district: "Lucknow",     organization: "NYKS (Nehru Yuva Kendra)",        volunteers: 200, date: "05 May 2025", media: [] },
-  { key: "9",  state: "Gujarat",         district: "Ahmedabad",   organization: "NSS (National Service Scheme)",   volunteers: 75,  date: "30 Apr 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "10", state: "Karnataka",       district: "Bengaluru",   organization: "NCC (National Cadet Corps)",      volunteers: 130, date: "25 Apr 2025", media: [] },
-  { key: "11", state: "Tamil Nadu",      district: "Chennai",     organization: "Bharat Scouts & Guides",          volunteers: 100, date: "20 Apr 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "12", state: "Kerala",          district: "Thiruvananthapuram", organization: "NYKS (Nehru Yuva Kendra)", volunteers: 150, date: "15 Apr 2025", media: [] },
-];
 
 /* ── Stat Card ── */
 const StatCard: React.FC<{ label: string; value: string | number; color: string }> = ({ label, value, color }) => (
@@ -59,25 +50,281 @@ const StatCard: React.FC<{ label: string; value: string | number; color: string 
 export const TrainingScheduleRecords: React.FC = () => {
    const navigate = useNavigate();
   const [search, setSearch]   = useState("");
-  const [state, setState]     = useState<string | undefined>(undefined);
+  const [state, setState]     = useState<string | number | undefined>(undefined);
+  const [district, setDistrict] = useState<string | number | undefined>(undefined);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate]   = useState("");
+  const [states, setStates] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [records, setRecords] = useState<TrainingScheduleRecord[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [recordsLoading, setRecordsLoading] = useState(false);
+  const [orgTypes, setOrgTypes] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchStates();
+    fetchOrgTypes();
+  }, []);
+
+  useEffect(() => {
+    if (states.length > 0) {
+      // Auto-fill state and district from logged-in user
+      const userState = AuthService.getUserState();
+      const userDistrict = AuthService.getUserDistrict();
+      if (userState.state_id) {
+        console.log('Auto-filling state filter:', userState);
+        setState(userState.state_id);
+      }
+      if (userDistrict.district_id) {
+        console.log('Auto-filling district filter:', userDistrict);
+        setDistrict(userDistrict.district_id);
+      }
+    }
+  }, [states]);
+
+  useEffect(() => {
+    if (states.length > 0) {
+      fetchAllDistricts();
+    }
+  }, [states]);
+
+  useEffect(() => {
+    if (states.length > 0 && districts.length > 0) {
+      fetchRecords();
+    }
+  }, [states, districts]);
+
+  const fetchStates = async () => {
+    try {
+      setStatesLoading(true);
+      const res = await CommonService.getStates();
+      // 1. Direct array (YOUR API FORMAT)
+      if (Array.isArray(res)) {
+        setStates(res);
+      }
+      // 2. Wrapped { data: [...] }
+      else if (res.data && Array.isArray(res.data)) {
+        setStates(res.data);
+      }
+      // 3. Paginated { data: { data: [...] } }
+      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        setStates((res.data as any).data);
+      } else {
+        setStates([]);
+      }
+    } catch (error) {
+      console.error("State fetch error:", error);
+    } finally {
+      setStatesLoading(false);
+    }
+  };
+
+  const fetchAllDistricts = async () => {
+    try {
+      console.log('Fetching districts for all states...');
+      const allDistricts: any[] = [];
+      
+      // Fetch districts for each state
+      for (const state of states) {
+        try {
+          const res = await CommonService.getDistrictsByState(String(state.id));
+          console.log(`Districts for state ${state.id} (${state.name}):`, res);
+          
+          let stateDistricts: any[] = [];
+          if (res.data && (res.data as any).districts && Array.isArray((res.data as any).districts)) {
+            stateDistricts = (res.data as any).districts;
+          } else if (Array.isArray(res)) {
+            stateDistricts = res;
+          } else if (res.data && Array.isArray(res.data)) {
+            stateDistricts = res.data;
+          }
+          
+          // Add state_id to each district for easy lookup
+          stateDistricts.forEach((d: any) => {
+            d.state_id = state.id;
+          });
+          
+          allDistricts.push(...stateDistricts);
+        } catch (error) {
+          console.error(`Failed to fetch districts for state ${state.id}:`, error);
+        }
+      }
+      
+      console.log('All districts loaded:', allDistricts);
+      setDistricts(allDistricts);
+    } catch (error) {
+      console.error("Error fetching all districts:", error);
+      setDistricts([]);
+    }
+  };
+
+  const fetchOrgTypes = async () => {
+    try {
+      const res = await CommonService.getOrgTypes();
+      let orgs: any[] = [];
+      
+      if (res.data && Array.isArray(res.data)) {
+        orgs = res.data;
+      } else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        orgs = (res.data as any).data;
+      } else if (Array.isArray(res)) {
+        orgs = res;
+      } else {
+        orgs = [];
+      }
+      
+      console.log('Organization types loaded:', orgs);
+      setOrgTypes(orgs);
+    } catch (error) {
+      console.error("Org types fetch error:", error);
+      setOrgTypes([]);
+    }
+  };
+
+  const fetchRecords = async () => {
+    try {
+      setRecordsLoading(true);
+      const res = await CommonService.getTrainingSchedules();
+      let rawRecords: any[] = [];
+      
+      // Handle direct array response
+      if (Array.isArray(res)) {
+        rawRecords = res;
+      }
+      // Handle wrapped response { data: [...] }
+      else if (res.data && Array.isArray(res.data)) {
+        rawRecords = res.data;
+      }
+      // Handle paginated response { data: { data: [...] } }
+      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        rawRecords = (res.data as any).data;
+      } else {
+        rawRecords = [];
+      }
+      
+      console.log('Raw training schedules:', rawRecords);
+      console.log('Available states for mapping:', states);
+      
+      // Debug: Log first record structure if available
+      if (rawRecords.length > 0) {
+        console.log('First record structure:', {
+          state: `${rawRecords[0].state} (type: ${typeof rawRecords[0].state})`,
+          district: `${rawRecords[0].district} (type: ${typeof rawRecords[0].district})`,
+          organization: `${rawRecords[0].organization} (type: ${typeof rawRecords[0].organization})`,
+          organization_name: `${rawRecords[0].organization_name}`,
+          batch_no: `${rawRecords[0].batch_no}`,
+          all_keys: Object.keys(rawRecords[0])
+        });
+      }
+      
+      // Enrich records with human-readable names
+      const enrichedRecords = rawRecords.map((r: any, idx: number) => {
+        // Get state name - handle both number and string IDs
+        let stateName = String(r.state);
+        console.log(`[Record ${idx + 1}] Looking for state ID: ${r.state} (type: ${typeof r.state})`);
+        
+        // Try to find state by ID (handle both numeric and string IDs)
+        const stateObj = states.find((s: any) => {
+          const sId = String(s.id);
+          const rId = String(r.state);
+          return sId === rId || parseInt(sId) === parseInt(rId);
+        });
+        
+        if (stateObj) {
+          stateName = stateObj.name;
+          console.log(`  ✓ Found state: ${stateName}`);
+        } else {
+          console.log(`  ✗ State not found. Searched states:`, states.map((s: any) => ({ id: s.id, name: s.name })));
+        }
+        
+        // Get district name
+        let districtName = r.district || 'N/A';
+        if (typeof r.district === 'number') {
+          const districtObj = districts.find((d: any) => 
+            d.id === r.district || d.id === parseInt(String(r.district))
+          );
+          districtName = districtObj?.name || `District ${r.district}`;
+        }
+        console.log(`  District: ${districtName} (lookup from ${districts.length} districts)`);
+        
+        // Get organization type - for display
+        let orgName = r.organization_type || r.organization_name;
+        
+        // If organization_type is not available, try to find from orgTypes by ID
+        if (!orgName && r.organization) {
+          const orgObj = orgTypes.find((o: any) => 
+            o.id === r.organization || o.id === parseInt(String(r.organization))
+          );
+          orgName = orgObj?.code || orgObj?.name || `Org ${r.organization}`;
+        }
+        
+        if (!orgName) {
+          orgName = 'N/A';
+        }
+        console.log(`  Organization: ${orgName} (from organization_type: ${r.organization_type}, organization_name: ${r.organization_name})`, orgTypes);
+        
+        return {
+          ...r,
+          state: stateName,
+          district: districtName,
+          organization: orgName,
+          volunteers: r.number_of_volunteers || 0,
+          batchNo: r.batch_no,
+          venue: r.institute_details,
+          trainersDetails: r.trainers_details,
+          startDate: r.start_date,
+          endDate: r.end_date,
+          status: r.status
+        };
+      });
+      
+      console.log('Enriched records:', enrichedRecords);
+      setRecords(enrichedRecords as TrainingScheduleRecord[]);
+    } catch (error) {
+      console.error("Records fetch error:", error);
+      setRecords([]);
+    } finally {
+      setRecordsLoading(false);
+    }
+  };
 
   /* Derived stats */
-  const totalRecords   = ALL_RECORDS.length;
-  const statesCovered  = new Set(ALL_RECORDS.map((r) => r.state)).size;
-  const totalVolunteers = ALL_RECORDS.reduce((s, r) => s + r.volunteers, 0);
-  const totalMedia     = ALL_RECORDS.reduce((s, r) => s + r.media.length, 0);
+  const totalRecords   = records.length;
+  const statesCovered  = new Set(records.map((r) => r.state)).size;
+  const totalVolunteers = records.reduce((s, r) => s + r.volunteers, 0);
+  const ongoingCount = records.filter((r) => r.status === 'ongoing').length;
 
-  /* State options */
-  const stateOptions = [...new Set(ALL_RECORDS.map((r) => r.state))].map((s) => ({ label: s, value: s }));
+  /* State options - from API */
+  const stateOptions = states.map((s: any) => ({ label: s.name, value: s.id }));
+
+  /* District options - filtered by selected state */
+  const districtOptions = state 
+    ? districts.filter((d: any) => d.state_id === state).map((d: any) => ({ label: d.name, value: d.id }))
+    : [];
 
   /* Filtered rows */
-  const filtered = ALL_RECORDS.filter((r) => {
+  const filtered = records.filter((r) => {
     const q = search.toLowerCase();
-    const matchSearch = !q || r.state.toLowerCase().includes(q) || r.district.toLowerCase().includes(q) || r.organization.toLowerCase().includes(q);
-    const matchState  = !state || r.state === state;
-    return matchSearch && matchState;
+    const matchSearch = !q || 
+      (typeof r.state === 'string' ? r.state.toLowerCase().includes(q) : false) || 
+      (typeof r.district === 'string' ? r.district.toLowerCase().includes(q) : false) || 
+      (typeof r.organization === 'string' ? r.organization.toLowerCase().includes(q) : false);
+    
+    // Match by state name (after enrichment)
+    let matchState = !state;
+    if (state && !matchState) {
+      const selectedStateName = states.find((s: any) => s.id === state)?.name;
+      matchState = selectedStateName && r.state === selectedStateName;
+    }
+
+    // Match by district
+    let matchDistrict = !district;
+    if (district && !matchDistrict) {
+      const selectedDistrictName = districts.find((d: any) => d.id === district)?.name;
+      matchDistrict = selectedDistrictName && r.district === selectedDistrictName;
+    }
+
+    return matchSearch && matchState && matchDistrict;
   });
 
   /* Table columns */
@@ -131,8 +378,8 @@ export const TrainingScheduleRecords: React.FC = () => {
     },
     {
       title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>TRAINERS DETAILS</span>,
-      dataIndex: "trainers details",
-      key: "trainers details",
+      dataIndex: "trainersDetails",
+      key: "trainersDetails",
       width: 120,
       render: (v: string) => <Text style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{v}</Text>,
     },
@@ -188,10 +435,10 @@ export const TrainingScheduleRecords: React.FC = () => {
 
       {/* ── Stat cards ── */}
       <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
-        <StatCard label="Total Schedules"        value={totalRecords}    color="#2563eb" />
-        <StatCard label="Upcoming"       value={statesCovered}   color="#16a34a" />
-        <StatCard label="Ongoing"     value={totalVolunteers} color="#d97706" />
-        <StatCard label="Completed" value={totalMedia}      color="#7c3aed" />
+        <StatCard label="Total Schedules"        value={totalRecords}      color="#2563eb" />
+        <StatCard label="States Covered"       value={statesCovered}     color="#16a34a" />
+        <StatCard label="Total Volunteers"     value={totalVolunteers}   color="#d97706" />
+        <StatCard label="Ongoing"              value={ongoingCount}      color="#7c3aed" />
       </div>
 
       {/* ── Filter + table card ── */}
@@ -211,8 +458,20 @@ export const TrainingScheduleRecords: React.FC = () => {
             placeholder="All States"
             options={stateOptions}
             value={state}
-            onChange={setState}
+            onChange={(val) => {
+              setState(val);
+              setDistrict(undefined); // Reset district when state changes
+            }}
             allowClear
+            style={{ width: 160 }}
+          />
+          <Select
+            placeholder="All Districts"
+            options={districtOptions}
+            value={district}
+            onChange={setDistrict}
+            allowClear
+            disabled={!state}
             style={{ width: 160 }}
           />
           <Text style={{ marginLeft: "auto", color: "#6b7280", fontSize: 13, whiteSpace: "nowrap" }}>
@@ -224,7 +483,8 @@ export const TrainingScheduleRecords: React.FC = () => {
         <Table
           columns={columns}
           dataSource={filtered}
-          rowKey="key"
+          rowKey="id"
+          loading={recordsLoading}
           pagination={{ pageSize: 10, showSizeChanger: true }}
           style={{ borderRadius: 0 }}
         />

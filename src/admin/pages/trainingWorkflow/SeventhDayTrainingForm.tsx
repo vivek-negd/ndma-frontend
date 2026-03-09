@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Typography,
@@ -12,6 +12,7 @@ import {
   Space,
   message,
   Upload,
+  Spin,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -19,6 +20,7 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { CommonService, AuthService } from "../../../services";
 
 const { Title, Text } = Typography;
 
@@ -26,6 +28,171 @@ export const SeventhDayTrainingForm = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [states, setStates] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [orgTypes, setOrgTypes] = useState<any[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
+  const [orgTypesLoading, setOrgTypesLoading] = useState(false);
+
+  useEffect(() => {
+    fetchStates();
+    fetchOrgTypes();
+  }, []);
+
+  // Auto-fill state from logged-in user after states load
+  useEffect(() => {
+    if (states.length > 0) {
+      const userState = AuthService.getUserState();
+      if (userState.state_id) {
+        console.log('Auto-filling state:', userState);
+        form.setFieldValue('state', userState.state_id);
+        // Fetch districts for the auto-filled state
+        handleStateChange(userState.state_id);
+      } else {
+        console.log('No user state found');
+      }
+    }
+  }, [states]);
+
+  // Auto-fill district after districts load
+  useEffect(() => {
+    if (districts.length > 0) {
+      const userDistrict = AuthService.getUserDistrict();
+      if (userDistrict.district_id) {
+        console.log('Auto-filling district:', userDistrict);
+        // Check if the district exists in the loaded districts
+        const districtExists = districts.some((d: any) => d.id === userDistrict.district_id);
+        if (districtExists) {
+          form.setFieldValue('district', userDistrict.district_id);
+        } else {
+          console.log('District not found in loaded list:', userDistrict.district_id);
+        }
+      } else {
+        console.log('No user district found');
+      }
+    }
+  }, [districts]);
+
+  const fetchStates = async () => {
+    try {
+      setStatesLoading(true);
+      const res = await CommonService.getStates();
+      // Handle direct array response
+      if (Array.isArray(res)) {
+        setStates(res as any);
+      }
+      // Handle wrapped response { data: [...] }
+      else if (res.data && Array.isArray(res.data)) {
+        setStates(res.data as any);
+      }
+      // Handle paginated response { data: { data: [...] } }
+      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        setStates((res.data as any).data as any);
+      } else {
+        setStates([]);
+      }
+    } catch (error) {
+      console.error("State fetch error:", error);
+      message.error("Failed to load states");
+    } finally {
+      setStatesLoading(false);
+    }
+  };
+
+  const fetchOrgTypes = async () => {
+    try {
+      setOrgTypesLoading(true);
+      const res = await CommonService.getOrgTypes();
+      console.log('Organization Types raw response:', res);
+      
+      // Handle API response { organization_types: [...] }
+      if (res.organization_types && Array.isArray(res.organization_types)) {
+        console.log('✓ Organization_types API response - Found', res.organization_types.length, 'org types');
+        setOrgTypes(res.organization_types as any);
+      }
+      // Handle direct array response
+      else if (Array.isArray(res)) {
+        console.log('✓ Direct array response - Found', res.length, 'org types');
+        setOrgTypes(res as any);
+      }
+      // Handle wrapped response { data: [...] }
+      else if (res.data && Array.isArray(res.data)) {
+        console.log('✓ Wrapped array response - Found', res.data.length, 'org types');
+        setOrgTypes(res.data as any);
+      }
+      // Handle org-types API response { data: { org_types: [...] } }
+      else if (res.data && (res.data as any).org_types && Array.isArray((res.data as any).org_types)) {
+        console.log('✓ Org-types API response - Found', (res.data as any).org_types.length, 'org types');
+        setOrgTypes((res.data as any).org_types as any);
+      }
+      // Handle organizations API response { data: { organizations: [...] } }
+      else if (res.data && (res.data as any).organizations && Array.isArray((res.data as any).organizations)) {
+        console.log('✓ Organizations API response - Found', (res.data as any).organizations.length, 'org types');
+        setOrgTypes((res.data as any).organizations as any);
+      }
+      // Handle paginated response { data: { data: [...] } }
+      else if (res.data && typeof res.data === 'object' && 'data' in res.data && Array.isArray((res.data as any).data)) {
+        console.log('✓ Paginated response - Found', (res.data as any).data.length, 'org types');
+        setOrgTypes((res.data as any).data as any);
+      } else {
+        console.log('✗ No org types found - Response structure:', JSON.stringify(res, null, 2));
+        setOrgTypes([]);
+      }
+    } catch (error) {
+      console.error("Org types fetch error:", error);
+      message.error("Failed to load organization types");
+    } finally {
+      setOrgTypesLoading(false);
+    }
+  };
+
+  const handleStateChange = async (stateId: string | number) => {
+    console.log('State selected:', stateId);
+    form.setFieldValue("district", undefined);
+    setDistricts([]);
+    
+    if (!stateId) {
+      setDistricts([]);
+      return;
+    }
+    
+    try {
+      setDistrictsLoading(true);
+      const res = await CommonService.getDistrictsByState(String(stateId));
+      console.log('Districts response:', res);
+      
+      // Handle direct array response
+      if (Array.isArray(res)) {
+        console.log('Direct array response');
+        setDistricts(res as any);
+      }
+      // Handle wrapped response { data: [...] }
+      else if (res.data && Array.isArray(res.data)) {
+        console.log('Wrapped array response');
+        setDistricts(res.data as any);
+      }
+      // Handle district API response { data: { districts: [...] } }
+      else if (res.data && (res.data as any).districts && Array.isArray((res.data as any).districts)) {
+        console.log('District API response');
+        setDistricts((res.data as any).districts as any);
+      }
+      // Handle paginated response { data: { data: [...] } }
+      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        console.log('Paginated response');
+        setDistricts((res.data as any).data as any);
+      } else {
+        console.log('No districts found');
+        setDistricts([]);
+      }
+    } catch (error) {
+      console.error("Districts fetch error:", error);
+      message.error("Failed to load districts");
+      setDistricts([]);
+    } finally {
+      setDistrictsLoading(false);
+    }
+  };
 
   const handleSubmit = async (values: any) => {
     try {
@@ -80,15 +247,16 @@ export const SeventhDayTrainingForm = () => {
                 name="state"
                 rules={[{ required: true, message: 'Please select state!' }]}
               >
-                <Select placeholder="Select State">
-                  <Select.Option value="MH">Maharashtra</Select.Option>
-                  <Select.Option value="GJ">Gujarat</Select.Option>
-                  <Select.Option value="RJ">Rajasthan</Select.Option>
-                  <Select.Option value="UP">Uttar Pradesh</Select.Option>
-                  <Select.Option value="KA">Karnataka</Select.Option>
-                  <Select.Option value="TN">Tamil Nadu</Select.Option>
-                  <Select.Option value="WB">West Bengal</Select.Option>
-                  <Select.Option value="DL">Delhi</Select.Option>
+                <Select 
+                  placeholder="Select State"
+                  loading={statesLoading}
+                  onChange={handleStateChange}
+                >
+                  {states.map((state: any) => (
+                    <Select.Option key={state.id} value={state.id}>
+                      {state.name}
+                    </Select.Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
@@ -97,9 +265,19 @@ export const SeventhDayTrainingForm = () => {
               <Form.Item
                 label="District"
                 name="district"
-                rules={[{ required: true, message: 'Please enter district!' }]}
+                rules={[{ required: true, message: 'Please select district!' }]}
               >
-                <Input placeholder="Enter District" />
+                <Select 
+                  placeholder="Select District"
+                  loading={districtsLoading}
+                  disabled={districts.length === 0}
+                >
+                  {districts.map((district: any) => (
+                    <Select.Option key={district.id} value={district.id}>
+                      {district.name}
+                    </Select.Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
 
@@ -107,9 +285,18 @@ export const SeventhDayTrainingForm = () => {
               <Form.Item
                 label="Organization"
                 name="organization"
-                rules={[{ required: true, message: 'Please enter organization!' }]}
+                rules={[{ required: true, message: 'Please select organization!' }]}
               >
-                <Input placeholder="Enter Organization Name" />
+                <Select
+                  placeholder="Select Organization Type"
+                  loading={orgTypesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {orgTypes.map((o) => (
+                    <Select.Option key={o.id} value={o.id}>{o.name}</Select.Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>

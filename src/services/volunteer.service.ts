@@ -108,6 +108,28 @@ export class VolunteerService {
     return response.data;
   }
 
+  // Coverage / Youth organisation records
+  static async getCoverage(filters?: Record<string, any>): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            params.append(key, value.join(','));
+          } else {
+            params.append(key, String(value));
+          }
+        }
+      });
+    }
+
+    const query = params.toString();
+    const response = await commonEndpoint.get<ApiResponse<any>>(
+      `/volunteer/coverage/${query ? `?${query}` : ''}`
+    );
+    return response.data;
+  }
+
   // Training related
   static async assignToTraining(volunteerId: string, trainingId: string): Promise<ApiResponse<void>> {
     const response = await commonEndpoint.post<ApiResponse<void>>(`/volunteers/${volunteerId}/assign-training`, { trainingId });

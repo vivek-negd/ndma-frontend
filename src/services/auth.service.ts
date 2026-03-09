@@ -95,6 +95,23 @@ export class AuthService {
     localStorage.removeItem('user');
   }
 
+  // User state information
+  static getUserState(): { state_id: number | null; state_name: string | null } {
+    const user = AuthService.getUser();
+    return {
+      state_id: user?.state_id || null,
+      state_name: user?.state_name || null
+    };
+  }
+
+  static getUserDistrict(): { district_id: number | null; district_name: string | null } {
+    const user = AuthService.getUser();
+    return {
+      district_id: user?.district_id || null,
+      district_name: user?.district_name || null
+    };
+  }
+
   static isAuthenticated(): boolean {
     const token = localStorage.getItem('token');
     if (!token) return false;

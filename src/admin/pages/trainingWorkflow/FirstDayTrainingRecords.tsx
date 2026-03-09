@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Button,
@@ -7,6 +7,7 @@ import {
   Table,
   Image,
   Badge,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -14,6 +15,7 @@ import {
   PictureOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { CommonService } from "../../../services";
 
 const { Title, Text } = Typography;
 
@@ -62,6 +64,37 @@ export const FirstDayTrainingRecords: React.FC = () => {
   const [state, setState] = useState<string | undefined>(undefined);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [states, setStates] = useState<any[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+
+  useEffect(() => {
+    fetchStates();
+  }, []);
+
+  const fetchStates = async () => {
+    try {
+      setStatesLoading(true);
+      const res = await CommonService.getStates();
+      // Handle direct array response
+      if (Array.isArray(res)) {
+        setStates(res as any);
+      }
+      // Handle wrapped response { data: [...] }
+      else if (res.data && Array.isArray(res.data)) {
+        setStates(res.data as any);
+      }
+      // Handle paginated response { data: { data: [...] } }
+      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        setStates((res.data as any).data as any);
+      } else {
+        setStates([]);
+      }
+    } catch (error) {
+      console.error("State fetch error:", error);
+    } finally {
+      setStatesLoading(false);
+    }
+  };
 
   /* Derived stats */
   const totalRecords = ALL_RECORDS.length;
@@ -69,8 +102,8 @@ export const FirstDayTrainingRecords: React.FC = () => {
   const totalVolunteers = ALL_RECORDS.reduce((s, r) => s + r.volunteers, 0);
   const totalMedia = ALL_RECORDS.reduce((s, r) => s + r.media.length, 0);
 
-  /* State options */
-  const stateOptions = [...new Set(ALL_RECORDS.map((r) => r.state))].map((s) => ({ label: s, value: s }));
+  /* State options - from API */
+  const stateOptions = states.map((s: any) => ({ label: s.name, value: s.id }));
 
   /* Filtered rows */
   const filtered = ALL_RECORDS.filter((r) => {

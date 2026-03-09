@@ -137,4 +137,31 @@ export class TrainingService {
     const response = await commonEndpoint.get<ApiResponse<any[]>>(`/trainings/calendar/${year}/${month}`);
     return response.data;
   }
+
+  // Training schedules by role
+  static async getTrainingSchedules(role?: 'SDMA' | 'NDMA' | 'SUPER_ADMIN', filters?: any): Promise<ApiResponse<PaginatedResponse<Training>>> {
+    const params = new URLSearchParams();
+    
+    if (role) {
+      params.append('role', role);
+    } else {
+      const userRole = localStorage.getItem('userRole') || 'SDMA';
+      params.append('role', userRole);
+    }
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            params.append(key, value.join(','));
+          } else {
+            params.append(key, String(value));
+          }
+        }
+      });
+    }
+    
+    const response = await commonEndpoint.get<ApiResponse<PaginatedResponse<Training>>>(`/api/v1/training-schedules/?${params}`);
+    return response.data;
+  }
 }

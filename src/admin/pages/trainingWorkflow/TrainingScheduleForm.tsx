@@ -14,7 +14,7 @@ import {
 } from "antd";
 import { SaveOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { CommonService } from "../../../services";
+import { CommonService, AuthService } from "../../../services";
 
 const { Title, Text } = Typography;
 
@@ -35,10 +35,23 @@ export const TrainingScheduleForm: React.FC = () => {
       try {
         setStatesLoading(true);
         const res = await CommonService.getStates();
-        console.log(res,"state");
-        
-        // setStates(res.data?.results ?? (res.data as any) ?? []);
-      } catch {
+          
+        // Handle direct array response
+        if (Array.isArray(res)) {
+          setStates(res as any);
+        }
+        // Handle wrapped response { data: [...] }
+        else if (res.data && Array.isArray(res.data)) {
+          setStates(res.data as any);
+        }
+        // Handle paginated response { data: { data: [...] } }
+        else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+          setStates((res.data as any).data as any);
+        } else {
+          setStates([]);
+        }
+      } catch (error) {
+        console.error("State fetch error:", error);
         message.error("Failed to load states");
       } finally {
         setStatesLoading(false);
@@ -49,8 +62,43 @@ export const TrainingScheduleForm: React.FC = () => {
       try {
         setOrgTypesLoading(true);
         const res = await CommonService.getOrgTypes();
-        setOrgTypes((res.data as any) ?? []);
-      } catch {
+        console.log('Organization Types raw response:', res);
+        
+        // Handle API response { organization_types: [...] }
+        if (res.organization_types && Array.isArray(res.organization_types)) {
+          console.log('✓ Organization_types API response - Found', res.organization_types.length, 'org types');
+          setOrgTypes(res.organization_types as any);
+        }
+        // Handle direct array response
+        else if (Array.isArray(res)) {
+          console.log('✓ Direct array response - Found', res.length, 'org types');
+          setOrgTypes(res as any);
+        }
+        // Handle wrapped response { data: [...] }
+        else if (res.data && Array.isArray(res.data)) {
+          console.log('✓ Wrapped array response - Found', res.data.length, 'org types');
+          setOrgTypes(res.data as any);
+        }
+        // Handle org-types API response { data: { org_types: [...] } }
+        else if (res.data && (res.data as any).org_types && Array.isArray((res.data as any).org_types)) {
+          console.log('✓ Org-types API response - Found', (res.data as any).org_types.length, 'org types');
+          setOrgTypes((res.data as any).org_types as any);
+        }
+        // Handle organizations API response { data: { organizations: [...] } }
+        else if (res.data && (res.data as any).organizations && Array.isArray((res.data as any).organizations)) {
+          console.log('✓ Organizations API response - Found', (res.data as any).organizations.length, 'org types');
+          setOrgTypes((res.data as any).organizations as any);
+        }
+        // Handle paginated response { data: { data: [...] } }
+        else if (res.data && typeof res.data === 'object' && 'data' in res.data && Array.isArray((res.data as any).data)) {
+          console.log('✓ Paginated response - Found', (res.data as any).data.length, 'org types');
+          setOrgTypes((res.data as any).data as any);
+        } else {
+          console.log('✗ No org types found - Response structure:', JSON.stringify(res, null, 2));
+          setOrgTypes([]);
+        }
+      } catch (error) {
+        console.error("Org types fetch error:", error);
         message.error("Failed to load organization types");
       } finally {
         setOrgTypesLoading(false);
@@ -61,15 +109,82 @@ export const TrainingScheduleForm: React.FC = () => {
     fetchOrgTypes();
   }, []);
 
-  const handleStateChange = async (stateId: string) => {
+  // Auto-fill state from logged-in user after states load
+  useEffect(() => {
+    if (states.length > 0) {
+      const userState = AuthService.getUserState();
+      if (userState.state_id) {
+        console.log('Auto-filling state:', userState);
+        form.setFieldValue('state', userState.state_id);
+        // Fetch districts for the auto-filled state
+        handleStateChange(userState.state_id);
+      } else {
+        console.log('No user state found');
+      }
+    }
+  }, [states]);
+
+  // Auto-fill district after districts load
+  useEffect(() => {
+    if (districts.length > 0) {
+      const userDistrict = AuthService.getUserDistrict();
+      if (userDistrict.district_id) {
+        console.log('Auto-filling district:', userDistrict);
+        // Check if the district exists in the loaded districts
+        const districtExists = districts.some((d: any) => d.id === userDistrict.district_id);
+        if (districtExists) {
+          form.setFieldValue('district', userDistrict.district_id);
+        } else {
+          console.log('District not found in loaded list:', userDistrict.district_id);
+        }
+      } else {
+        console.log('No user district found');
+      }
+    }
+  }, [districts]);
+
+  const handleStateChange = async (stateId: string | number) => {
+    console.log('State selected:', stateId);
     form.setFieldValue("district", undefined);
     setDistricts([]);
+    
+    if (!stateId) {
+      setDistricts([]);
+      return;
+    }
+    
     try {
       setDistrictsLoading(true);
-      const res = await CommonService.getDistrictsByState(stateId);
-      setDistricts((res.data as any) ?? []);
-    } catch {
+      const res = await CommonService.getDistrictsByState(String(stateId));
+      console.log('Districts response:', res);
+      
+      // Handle direct array response
+      if (Array.isArray(res)) {
+        console.log('Direct array response');
+        setDistricts(res as any);
+      }
+      // Handle wrapped response { data: [...] }
+      else if (res.data && Array.isArray(res.data)) {
+        console.log('Wrapped array response');
+        setDistricts(res.data as any);
+      }
+      // Handle district API response { data: { districts: [...] } }
+      else if (res.data && (res.data as any).districts && Array.isArray((res.data as any).districts)) {
+        console.log('District API response');
+        setDistricts((res.data as any).districts as any);
+      }
+      // Handle paginated response { data: { data: [...] } }
+      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        console.log('Paginated response');
+        setDistricts((res.data as any).data as any);
+      } else {
+        console.log('No districts found');
+        setDistricts([]);
+      }
+    } catch (error) {
+      console.error("Districts fetch error:", error);
       message.error("Failed to load districts");
+      setDistricts([]);
     } finally {
       setDistrictsLoading(false);
     }
@@ -78,10 +193,42 @@ export const TrainingScheduleForm: React.FC = () => {
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
-      console.log("Training Schedule Data:", values);
-      message.success("Training schedule saved successfully!");
+      console.log("Form values:", values);
+      
+      // Find selected organization to get its name and code
+      const selectedOrg = orgTypes.find((o: any) => o.id === values.organization);
+      
+      // Transform form data to API payload format
+      const payload = {
+        state: values.state,
+        district: values.district,
+        organization: values.organization,
+        organization_name: values.organizationName || selectedOrg?.name || 'Training Center',
+        organization_type: selectedOrg?.code || 'INSTITUTE',
+        number_of_volunteers: parseInt(values.numberOfVolunteers, 10),
+        batch_no: values.batchNumber,
+        institute_details: values.venue,
+        trainers_details: values.trainers,
+        start_date: values.startDate ? values.startDate.format('YYYY-MM-DD') : null,
+        end_date: values.endDate ? values.endDate.format('YYYY-MM-DD') : null,
+        status: 'DRAFT',
+        sessions: []
+      };
+      
+      console.log("API Payload:", payload);
+      
+      // Call API to create training schedule
+      const response = await CommonService.createTrainingSchedule(payload);
+      console.log('Create training schedule response:', response);
+      
+      message.success("Training schedule created successfully!");
       form.resetFields();
-    } catch {
+      // Navigate back to records page after successful creation
+      setTimeout(() => {
+        navigate('/admin/training/schedule/records');
+      }, 1500);
+    } catch (error) {
+      console.error("Error creating training schedule:", error);
       message.error("Failed to save training schedule!");
     } finally {
       setLoading(false);
@@ -163,6 +310,12 @@ export const TrainingScheduleForm: React.FC = () => {
                     <Select.Option key={o.id} value={o.id}>{o.name}</Select.Option>
                   ))}
                 </Select>
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12} md={8}>
+              <Form.Item label="Organization Name" name="organizationName" rules={[{ required: true, message: "Please enter organization name!" }]}>
+                <Input placeholder="e.g. Training Center Patna" />
               </Form.Item>
             </Col>
           </Row>

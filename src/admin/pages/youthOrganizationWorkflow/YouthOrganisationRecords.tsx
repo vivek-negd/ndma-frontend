@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Button,
@@ -14,10 +14,11 @@ import {
   PictureOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { VolunteerService } from "../../../services";
 
 const { Title, Text } = Typography;
 
-/* ── Dummy data ── */
+/* Record shape used by the table */
 interface Record {
   key: string;
   state: string;
@@ -28,20 +29,8 @@ interface Record {
   media: string[];
 }
 
-const ALL_RECORDS: Record[] = [
-  { key: "1",  state: "Jharkhand",       district: "Ranchi",      organization: "NSS (National Service Scheme)",   volunteers: 90,  date: "09 Jun 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "2",  state: "Assam",           district: "Guwahati",    organization: "Bharat Scouts & Guides",          volunteers: 60,  date: "02 Jun 2025", media: [] },
-  { key: "3",  state: "Madhya Pradesh",  district: "Bhopal",      organization: "NCC (National Cadet Corps)",      volunteers: 120, date: "28 May 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "4",  state: "Rajasthan",       district: "Jaipur",      organization: "NYKS (Nehru Yuva Kendra)",        volunteers: 95,  date: "22 May 2025", media: [] },
-  { key: "5",  state: "Odisha",          district: "Bhubaneswar", organization: "NSS (National Service Scheme)",   volunteers: 110, date: "18 May 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "6",  state: "Bihar",           district: "Patna",       organization: "NCC (National Cadet Corps)",      volunteers: 80,  date: "14 May 2025", media: [] },
-  { key: "7",  state: "West Bengal",     district: "Kolkata",     organization: "Bharat Scouts & Guides",          volunteers: 150, date: "10 May 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "8",  state: "Uttar Pradesh",   district: "Lucknow",     organization: "NYKS (Nehru Yuva Kendra)",        volunteers: 200, date: "05 May 2025", media: [] },
-  { key: "9",  state: "Gujarat",         district: "Ahmedabad",   organization: "NSS (National Service Scheme)",   volunteers: 75,  date: "30 Apr 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "10", state: "Karnataka",       district: "Bengaluru",   organization: "NCC (National Cadet Corps)",      volunteers: 130, date: "25 Apr 2025", media: [] },
-  { key: "11", state: "Tamil Nadu",      district: "Chennai",     organization: "Bharat Scouts & Guides",          volunteers: 100, date: "20 Apr 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "12", state: "Kerala",          district: "Thiruvananthapuram", organization: "NYKS (Nehru Yuva Kendra)", volunteers: 150, date: "15 Apr 2025", media: [] },
-];
+/* Component state will hold records fetched from API */
+const EMPTY_RECORDS: Record[] = [];
 
 /* ── Stat Card ── */
 const StatCard: React.FC<{ label: string; value: string | number; color: string }> = ({ label, value, color }) => (
@@ -62,21 +51,52 @@ export const YouthOrganisationRecords: React.FC = () => {
   const [state, setState]     = useState<string | undefined>(undefined);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate]   = useState("");
+  const [records, setRecords] = useState<Record[]>(EMPTY_RECORDS);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCoverage = async () => {
+      try {
+        setLoading(true);
+        const res = await VolunteerService.getCoverage();
+        const payload = (res && (res as any).data) || res;
+        const items = Array.isArray(payload) ? payload : (payload?.records || payload?.data || []);
+
+        const mapped: Record[] = (items || []).map((item: any, idx: number) => ({
+          key: item.id ? String(item.id) : String(idx + 1),
+          state: item.state || item.state_name || item.state_name || item.state || '—',
+          district: item.district || item.district_name || item.district || '—',
+          organization: item.organization || item.organization_name || item.org_name || item.organization_type || '—',
+          volunteers: item.volunteers || item.volunteers_count || item.count || 0,
+          date: item.date || item.created_at || item.event_date || '',
+          media: item.media || item.media_urls || item.images || [],
+        }));
+
+        setRecords(mapped);
+      } catch (err) {
+        console.error('Failed to fetch youth org coverage:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCoverage();
+  }, []);
 
   /* Derived stats */
-  const totalRecords   = ALL_RECORDS.length;
-  const statesCovered  = new Set(ALL_RECORDS.map((r) => r.state)).size;
-  const totalVolunteers = ALL_RECORDS.reduce((s, r) => s + r.volunteers, 0);
-  const totalMedia     = ALL_RECORDS.reduce((s, r) => s + r.media.length, 0);
+  const totalRecords = records.length;
+  const statesCovered = new Set(records.map((r) => r.state)).size;
+  const totalVolunteers = records.reduce((s, r) => s + (r.volunteers || 0), 0);
+  const totalMedia = records.reduce((s, r) => s + (r.media?.length || 0), 0);
 
   /* State options */
-  const stateOptions = [...new Set(ALL_RECORDS.map((r) => r.state))].map((s) => ({ label: s, value: s }));
+  const stateOptions = [...new Set(records.map((r) => r.state))].map((s) => ({ label: s, value: s }));
 
   /* Filtered rows */
-  const filtered = ALL_RECORDS.filter((r) => {
+  const filtered = records.filter((r) => {
     const q = search.toLowerCase();
-    const matchSearch = !q || r.state.toLowerCase().includes(q) || r.district.toLowerCase().includes(q) || r.organization.toLowerCase().includes(q);
-    const matchState  = !state || r.state === state;
+    const matchSearch = !q || (r.state || '').toLowerCase().includes(q) || (r.district || '').toLowerCase().includes(q) || (r.organization || '').toLowerCase().includes(q);
+    const matchState = !state || r.state === state;
     return matchSearch && matchState;
   });
 
@@ -229,6 +249,7 @@ export const YouthOrganisationRecords: React.FC = () => {
         <Table
           columns={columns}
           dataSource={filtered}
+          loading={loading}
           rowKey="key"
           pagination={{ pageSize: 10, showSizeChanger: true }}
           style={{ borderRadius: 0 }}

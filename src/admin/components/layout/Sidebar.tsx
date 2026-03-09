@@ -163,6 +163,11 @@ export const Sidebar = () => {
       label: "Youth Organization Record",
     },
     {
+      key: "/bulk-youth-org-upload",
+      icon: <UploadOutlined />,
+      label: "Bulk Upload Youth Org",
+    },
+    {
       key: "/training-workflow",
       icon: <ReadOutlined />,
       label: "Training Workflow",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Upload,
   Button,
@@ -15,17 +15,23 @@ import {
   DatePicker,
   Row,
   Col,
+  Spin,
+  Table,
+  Tag,
 } from "antd";
 import {
   InboxOutlined,
   UploadOutlined,
   DownloadOutlined,
   ArrowLeftOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import type { UploadProps } from "antd";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Paragraph from "antd/es/typography/Paragraph";
+import { CommonService, AuthService } from "../../../services";
+
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
 
@@ -35,12 +41,110 @@ export const YouthOrganisationForm: React.FC = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [states, setStates] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [orgTypes, setOrgTypes] = useState<any[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<any>(null);
 
   const allowedTypes = [
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/zip",
   ];
+
+  // Fetch states on component mount
+  useEffect(() => {
+    fetchStates();
+    fetchOrgTypes();
+  }, []);
+
+  // Auto-fill state from logged-in user after states load
+  useEffect(() => {
+    if (states.length > 0) {
+      const userState = AuthService.getUserState();
+      if (userState.state_id) {
+        form.setFieldValue('state', userState.state_id);
+        handleStateChange(userState.state_id);
+      }
+    }
+  }, [states]);
+
+  // Auto-fill district after districts load
+  useEffect(() => {
+    if (districts.length > 0) {
+      const userDistrict = AuthService.getUserDistrict();
+      if (userDistrict.district_id) {
+        const districtExists = districts.some(d => d.id === userDistrict.district_id);
+        if (districtExists) {
+          form.setFieldValue('district', userDistrict.district_id);
+        }
+      }
+    }
+  }, [districts]);
+
+  const fetchStates = async () => {
+    try {
+      setStatesLoading(true);
+      const res = await CommonService.getStates();
+      if (Array.isArray(res)) {
+        setStates(res);
+      } else if (res?.data && Array.isArray(res.data)) {
+        setStates(res.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch states:', error);
+      message.error('Failed to load states');
+    } finally {
+      setStatesLoading(false);
+    }
+  };
+
+  const handleStateChange = async (stateId: number) => {
+    try {
+      const res = await CommonService.getDistrictsByState(String(stateId));
+      let districtList = [];
+      if (res && typeof res === 'object') {
+        if (Array.isArray(res)) {
+          districtList = res;
+        } else if ((res as any)?.data?.districts && Array.isArray((res as any).data.districts)) {
+          districtList = (res as any).data.districts;
+        } else if ((res as any)?.districts && Array.isArray((res as any).districts)) {
+          districtList = (res as any).districts;
+        } else if ((res as any)?.data && Array.isArray((res as any).data)) {
+          districtList = (res as any).data;
+        }
+      }
+      setDistricts(districtList);
+      form.setFieldValue('district', undefined);
+    } catch (error) {
+      console.error('Failed to fetch districts:', error);
+      message.error('Failed to load districts');
+      setDistricts([]);
+    }
+  };
+
+  const fetchOrgTypes = async () => {
+    try {
+      const res = await CommonService.getOrgTypes();
+      let orgTypesList = [];
+      if (res && typeof res === 'object') {
+        if (Array.isArray(res)) {
+          orgTypesList = res;
+        } else if ((res as any)?.organization_types && Array.isArray((res as any).organization_types)) {
+          orgTypesList = (res as any).organization_types;
+        } else if ((res as any)?.data?.organization_types && Array.isArray((res as any).data.organization_types)) {
+          orgTypesList = (res as any).data.organization_types;
+        } else if ((res as any)?.data && Array.isArray((res as any).data)) {
+          orgTypesList = (res as any).data;
+        }
+      }
+      setOrgTypes(orgTypesList);
+    } catch (error) {
+      console.error('Failed to fetch organization types:', error);
+      message.error('Failed to load organization types');
+    }
+  };
 
   const uploadProps: UploadProps = {
     name: "file",
@@ -64,34 +168,82 @@ export const YouthOrganisationForm: React.FC = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", fileList[0]);
-    
-    // Add form fields
-    const formValues = await form.validateFields();
-    Object.keys(formValues).forEach(key => {
-      formData.append(key, formValues[key]);
-    });
-
     try {
+      // Get and validate form fields
+      const formValues = await form.validateFields();
+      console.log('Form values:', formValues);
+
+      // Build FormData with correct format for backend
+      const formData = new FormData();
+      
+      // REQUIRED: File
+      formData.append('file', fileList[0]);
+      
+      // Get organization name/id
+      if (formValues.organization) {
+        formData.append('organization_id', formValues.organization);
+      }
+      
+      // Get state name from selected state ID
+      if (formValues.state) {
+        const stateName = states.find(s => s.id === formValues.state)?.name;
+        if (stateName) {
+          formData.append('state_name', stateName);
+        }
+      }
+      
+      // Get district name from selected district ID
+      if (formValues.district) {
+        const districtName = districts.find(d => d.id === formValues.district)?.name;
+        if (districtName) {
+          formData.append('district_name', districtName);
+        }
+      }
+
       setLoading(true);
 
-      await axios.post("/api/volunteers/bulk-upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (progressEvent) => {
-          const percent = Math.round(
-            (progressEvent.loaded * 100) / (progressEvent.total || 1)
-          );
-          setUploadProgress(percent);
-        },
-      });
-
-      message.success("File uploaded successfully!");
+      const response = await CommonService.uploadVolunteersBulk(formData);
+      
+      // Store the upload result for display (response from API)
+      const uploadData = (response as any)?.data || response;
+      setUploadResult(uploadData);
+      
+      // Show success/warning message based on response
+      const createdCount = (uploadData as any)?.created_count || 0;
+      const errorCount = (uploadData as any)?.error_count || 0;
+      const warningCount = (uploadData as any)?.warnings?.length || 0;
+      
+      if (errorCount === 0 && warningCount === 0) {
+        message.success(`Successfully created ${createdCount} youth organization(s)!`);
+      } else if (errorCount > 0) {
+        message.warning(`${createdCount} created, ${errorCount} error(s) found. See details below.`);
+      } else if (warningCount > 0) {
+        message.info(`${createdCount} created with ${warningCount} warning(s).`);
+      }
+      
       setFileList([]);
       setUploadProgress(0);
       form.resetFields();
-    } catch (error) {
-      message.error("Upload failed!");
+      
+      // Re-apply auto-fill after form reset
+      const userState = AuthService.getUserState();
+      if (userState.state_id) {
+        form.setFieldValue('state', userState.state_id);
+        await handleStateChange(userState.state_id);
+        // Auto-fill district after state
+        const userDistrict = AuthService.getUserDistrict();
+        if (userDistrict.district_id) {
+          setTimeout(() => {
+            form.setFieldValue('district', userDistrict.district_id);
+          }, 100);
+        }
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      console.error('Error response:', error?.response);
+      console.error('Error status:', error?.response?.status);
+      console.error('Error data:', error?.response?.data);
+      message.error(error?.response?.data?.message || "Upload failed!");
     } finally {
       setLoading(false);
     }
@@ -131,46 +283,61 @@ export const YouthOrganisationForm: React.FC = () => {
           layout="vertical"
           style={{ marginBottom: 0 }}
         >
-          <Row gutter={16}>
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="State"
-                name="state"
-                rules={[{ required: true, message: 'Please select state!' }]}
-              >
-                <Select placeholder="Select State">
-                  <Select.Option value="MH">Maharashtra</Select.Option>
-                  <Select.Option value="GJ">Gujarat</Select.Option>
-                  <Select.Option value="RJ">Rajasthan</Select.Option>
-                  <Select.Option value="UP">Uttar Pradesh</Select.Option>
-                  <Select.Option value="KA">Karnataka</Select.Option>
-                  <Select.Option value="TN">Tamil Nadu</Select.Option>
-                  <Select.Option value="WB">West Bengal</Select.Option>
-                  <Select.Option value="DL">Delhi</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
+          <Spin spinning={statesLoading}>
+            <Row gutter={16}>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="State"
+                  name="state"
+                  rules={[{ required: true, message: 'Please select state!' }]}
+                >
+                  <Select 
+                    placeholder="Select State"
+                    onChange={handleStateChange}
+                    loading={statesLoading}
+                  >
+                    {states.map((state: any) => (
+                      <Select.Option key={state.id} value={state.id}>
+                        {state.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
 
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="District"
-                name="district"
-                rules={[{ required: true, message: 'Please enter district!' }]}
-              >
-                <Input placeholder="Enter District" />
-              </Form.Item>
-            </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="District"
+                  name="district"
+                  rules={[{ required: true, message: 'Please select district!' }]}
+                >
+                  <Select placeholder="Select District">
+                    {districts.map((district: any) => (
+                      <Select.Option key={district.id} value={district.id}>
+                        {district.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
 
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="Organization"
-                name="organization"
-                rules={[{ required: true, message: 'Please enter organization!' }]}
-              >
-                <Input placeholder="Enter Organization Name" />
-              </Form.Item>
-            </Col>
-          </Row>
+              <Col xs={24} sm={12} md={8}>
+                <Form.Item
+                  label="Organization"
+                  name="organization"
+                  rules={[{ required: true, message: 'Please select organization!' }]}
+                >
+                  <Select placeholder="Select Organization Type">
+                    {orgTypes.map((org: any) => (
+                      <Select.Option key={org.id} value={org.id}>
+                        {org.name || org.code}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+          </Spin>
 
           <Row gutter={16}>
             <Col xs={24} sm={12} md={8}>
@@ -255,6 +422,97 @@ export const YouthOrganisationForm: React.FC = () => {
             Upload File
           </Button>
         </Space>
+
+        {/* Upload Result Summary */}
+        {uploadResult && (
+          <>
+            <Divider />
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              <div style={{ display: "flex", gap: 24 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <CheckCircleOutlined style={{ fontSize: 18, color: "#52c41a" }} />
+                  <span>
+                    <strong>Created:</strong> {uploadResult.created_count || 0}
+                  </span>
+                </div>
+                {uploadResult.error_count > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <ExclamationCircleOutlined style={{ fontSize: 18, color: "#ff4d4f" }} />
+                    <span>
+                      <strong>Errors:</strong> {uploadResult.error_count}
+                    </span>
+                  </div>
+                )}
+                {uploadResult.warnings && uploadResult.warnings.length > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <ExclamationCircleOutlined style={{ fontSize: 18, color: "#faad14" }} />
+                    <span>
+                      <strong>Warnings:</strong> {uploadResult.warnings.length}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Errors Table */}
+              {uploadResult.errors && uploadResult.errors.length > 0 && (
+                <div>
+                  <Typography.Title level={5}>Errors</Typography.Title>
+                  <Table
+                    dataSource={uploadResult.errors.map((error: any, idx: number) => ({
+                      key: idx,
+                      index: error.index + 1,
+                      errors: error.errors,
+                    }))}
+                    columns={[
+                      {
+                        title: "Row",
+                        dataIndex: "index",
+                        key: "index",
+                        width: 80,
+                        render: (text) => <Tag color="red">{text}</Tag>,
+                      },
+                      {
+                        title: "Error Details",
+                        dataIndex: "errors",
+                        key: "errors",
+                        render: (errors: any) => (
+                          <Space direction="vertical" size={0}>
+                            {Object.entries(errors).map(([field, errorArray]: [string, any]) => (
+                              <div key={field}>
+                                <strong>{field}:</strong> {errorArray.join(", ")}
+                              </div>
+                            ))}
+                          </Space>
+                        ),
+                      },
+                    ]}
+                    pagination={false}
+                    size="small"
+                  />
+                </div>
+              )}
+
+              {/* Warnings Table */}
+              {uploadResult.warnings && uploadResult.warnings.length > 0 && (
+                <div>
+                  <Typography.Title level={5}>Warnings</Typography.Title>
+                  <Alert
+                    message="Upload Warnings"
+                    description={
+                      <ul style={{ margin: 0, paddingLeft: 20 }}>
+                        {uploadResult.warnings.map((warning: any, idx: number) => (
+                          <li key={idx}>{warning}</li>
+                        ))}
+                      </ul>
+                    }
+                    type="warning"
+                    showIcon
+                  />
+                </div>
+              )}
+            </Space>
+          </>
+        )}
       </Space>
     </Card>
     </>
