@@ -1,0 +1,256 @@
+/* Default Theme Variables */
+:root {
+  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --error-color: #ff4d4f;
+}
+
+/* Light Theme */
+:root[data-theme="light"] {
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #fafafa;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --border-color: #d9d9d9;
+  --footer-bg: #f0f0f0;
+  --card-bg: #ffffff;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme */
+:root[data-theme="dark"] {
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --border-color: #434343;
+  --footer-bg: #1a1a1a;
+  --card-bg: #2d2d2d;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Apply theme variables globally */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+* {
+  font-family: var(--font-family);
+}
+
+.ant-layout {
+  background-color: var(--bg-primary) !important;
+}
+
+.ant-layout-header {
+  background-color: var(--header-bg) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ant-layout-sider {
+  background: var(--sidebar-bg) !important;
+}
+
+/* Sidebar header - professional branding area */
+.sidebar-header {
+  height: 72px;
+  min-height: 72px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.sidebar-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.sidebar-header__logo {
+  height: 32px;
+  width: auto;
+  max-width: 100px;
+  flex-shrink: 0;
+  object-fit: contain;
+  opacity: 0.92;
+  /* Lighten logo for visibility on dark sidebar */
+  filter: brightness(0) invert(1);
+}
+
+.sidebar-header__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.sidebar-header__title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-header__subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.app-sidebar.ant-layout-sider {
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-menu.ant-menu-inline {
+  border-inline-end: none !important;
+}
+
+/* Sidebar inner layout: header + scrollable menu */
+.app-sidebar .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-sidebar .sidebar-menu {
+  flex: 1;
+  min-height: 0;
+}
+
+.ant-layout-footer {
+  background-color: var(--footer-bg) !important;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+}
+
+
+.ant-menu {
+  background: transparent !important;
+}
+
+/* ===== Sidebar Dark Blue Theme ===== */
+
+/* All items and submenu titles are white on dark blue */
+.app-sidebar .ant-menu-item,
+.app-sidebar .ant-menu-submenu-title,
+.app-sidebar .ant-menu-sub .ant-menu-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+  background: transparent !important;
+}
+
+/* Title content */
+.app-sidebar .ant-menu-item .ant-menu-title-content,
+.app-sidebar .ant-menu-submenu-title .ant-menu-title-content {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Icons */
+.app-sidebar .ant-menu-item .anticon,
+.app-sidebar .ant-menu-submenu-title .anticon {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.app-sidebar .ant-menu-item .anticon svg path,
+.app-sidebar .ant-menu-item .anticon svg circle,
+.app-sidebar .ant-menu-submenu-title .anticon svg path {
+  fill: rgba(255, 255, 255, 0.85) !important;
+  stroke: none !important;
+}
+
+/* Submenu expand arrow */
+.app-sidebar .ant-menu-submenu-arrow::before,
+.app-sidebar .ant-menu-submenu-arrow::after {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* Expanded inline submenu — slightly darker overlay */
+.app-sidebar .ant-menu-sub.ant-menu-inline {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Hover state */
+.app-sidebar .ant-menu-item:hover,
+.app-sidebar .ant-menu-submenu-title:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+/* Selected item highlight */
+.app-sidebar .ant-menu-item-selected {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+.app-sidebar .ant-menu-item-selected .ant-menu-title-content,
+.app-sidebar .ant-menu-item-selected .anticon {
+  color: #ffffff !important;
+}
+
+/* Remove right-edge active indicator bar */
+.app-sidebar .ant-menu-item::after,
+.app-sidebar .ant-menu-item-selected::after {
+  display: none !important;
+}
+
+.ant-card {
+  background-color: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: var(--shadow);
+}
+
+.ant-card-head {
+  border-bottom-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-card-body {
+  color: var(--text-primary);
+}
+
+.ant-table {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary);
+}
+
+.ant-table-thead > tr > th {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom-color: var(--border-color) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.ant-statistic {
+  color: var(--text-primary);
+}
+
+.ant-statistic-title {
+  color: var(--text-secondary);
+}
+
+.ant-statistic-content {
+  color: var(--text-primary);
+}
