@@ -2868,6 +2868,10 @@ function precisionRound_default(step, max3) {
   return Math.max(0, exponent_default(max3) - exponent_default(step)) + 1;
 }
 
+// node_modules/eventemitter3/index.mjs
+var import_index = __toESM(require_eventemitter3(), 1);
+var eventemitter3_default = import_index.default;
+
 // node_modules/d3-interpolate/src/number.js
 function number_default(a2, b) {
   return a2 = +a2, b = +b, function(t) {
@@ -3766,11 +3770,40 @@ function cubehelix2(hue2) {
 var cubehelix_default = cubehelix2(hue);
 var cubehelixLong = cubehelix2(nogamma);
 
-// node_modules/eventemitter3/index.mjs
-var import_index = __toESM(require_eventemitter3(), 1);
-var eventemitter3_default = import_index.default;
-
 export {
+  eventemitter3_default,
+  ascending,
+  bisector,
+  bisectLeft,
+  bisectCenter,
+  bisect_default,
+  deviation,
+  extent,
+  Adder,
+  InternMap,
+  group,
+  groups,
+  rollup,
+  rollups,
+  sort,
+  groupSort,
+  ticks,
+  tickIncrement,
+  tickStep,
+  bin,
+  max2 as max,
+  maxIndex,
+  min2 as min,
+  minIndex,
+  quantile,
+  quantileSorted,
+  thresholdScott,
+  mean,
+  median,
+  medianIndex,
+  merge,
+  range,
+  sum2 as sum,
   path,
   arc_default,
   linear_default,
@@ -3805,38 +3838,12 @@ export {
   expand_default,
   silhouette_default,
   wiggle_default,
-  ascending,
-  bisector,
-  bisectLeft,
-  bisectCenter,
-  bisect_default,
-  deviation,
-  extent,
-  Adder,
-  InternMap,
-  group,
-  groups,
-  rollup,
-  rollups,
-  sort,
-  groupSort,
-  ticks,
-  tickIncrement,
-  tickStep,
-  bin,
-  max2 as max,
-  maxIndex,
-  min2 as min,
-  minIndex,
-  quantile,
-  quantileSorted,
-  thresholdScott,
-  mean,
-  median,
-  medianIndex,
-  merge,
-  range,
-  sum2 as sum,
+  formatSpecifier,
+  format,
+  formatPrefix,
+  precisionFixed_default,
+  precisionPrefix_default,
+  precisionRound_default,
   rgb,
   cubehelix,
   rgbBasis,
@@ -3844,13 +3851,6 @@ export {
   value_default,
   round_default,
   cubehelixLong,
-  piecewise,
-  formatSpecifier,
-  format,
-  formatPrefix,
-  precisionFixed_default,
-  precisionPrefix_default,
-  precisionRound_default,
-  eventemitter3_default
+  piecewise
 };
-//# sourceMappingURL=chunk-ADNO3MD5.js.map
+//# sourceMappingURL=chunk-P66EDQ5K.js.map

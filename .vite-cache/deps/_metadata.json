@@ -1,100 +1,103 @@
 {
-  "hash": "0f36e1a9",
-  "configHash": "6f495b44",
+  "hash": "8cdb0659",
+  "configHash": "c205f186",
   "lockfileHash": "9d764ea5",
-  "browserHash": "70722b94",
+  "browserHash": "2c8fdbe0",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "37a9d311",
+      "fileHash": "26c351f2",
       "needsInterop": true
     },
     "react-dom": {
       "src": "../../node_modules/react-dom/index.js",
       "file": "react-dom.js",
-      "fileHash": "c4ee6b88",
+      "fileHash": "04769c6b",
       "needsInterop": true
     },
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "3c9386d2",
+      "fileHash": "cc6c675a",
       "needsInterop": true
     },
     "react/jsx-runtime": {
       "src": "../../node_modules/react/jsx-runtime.js",
       "file": "react_jsx-runtime.js",
-      "fileHash": "f88847aa",
+      "fileHash": "a2314bfd",
       "needsInterop": true
     },
     "@ant-design/charts": {
       "src": "../../node_modules/@ant-design/charts/es/index.js",
       "file": "@ant-design_charts.js",
-      "fileHash": "09cce9f3",
+      "fileHash": "06330133",
       "needsInterop": false
     },
     "@ant-design/icons": {
       "src": "../../node_modules/@ant-design/icons/es/index.js",
       "file": "@ant-design_icons.js",
-      "fileHash": "4718c449",
+      "fileHash": "a77b7476",
       "needsInterop": false
     },
     "antd": {
       "src": "../../node_modules/antd/es/index.js",
       "file": "antd.js",
-      "fileHash": "f8b356ed",
+      "fileHash": "72991fb0",
       "needsInterop": false
     },
     "antd/es/typography/Paragraph": {
       "src": "../../node_modules/antd/es/typography/Paragraph.js",
       "file": "antd_es_typography_Paragraph.js",
-      "fileHash": "c493faff",
+      "fileHash": "aac24dca",
       "needsInterop": false
     },
     "axios": {
       "src": "../../node_modules/axios/index.js",
       "file": "axios.js",
-      "fileHash": "9180f8cf",
+      "fileHash": "cc43a857",
       "needsInterop": false
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "027ecec4",
+      "fileHash": "eca77846",
       "needsInterop": true
     },
     "react-router": {
       "src": "../../node_modules/react-router/dist/index.js",
       "file": "react-router.js",
-      "fileHash": "408a040f",
+      "fileHash": "a0f10845",
       "needsInterop": false
     },
     "react-router-dom": {
       "src": "../../node_modules/react-router-dom/dist/index.js",
       "file": "react-router-dom.js",
-      "fileHash": "338371cf",
+      "fileHash": "42072480",
       "needsInterop": false
     },
     "react-slick": {
       "src": "../../node_modules/react-slick/lib/index.js",
       "file": "react-slick.js",
-      "fileHash": "fa49059e",
+      "fileHash": "9773cc40",
       "needsInterop": true
     },
     "recharts": {
       "src": "../../node_modules/recharts/es6/index.js",
       "file": "recharts.js",
-      "fileHash": "9173a76c",
+      "fileHash": "704eb53c",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-ADNO3MD5": {
-      "file": "chunk-ADNO3MD5.js"
+    "chunk-ADJTET2T": {
+      "file": "chunk-ADJTET2T.js"
     },
     "chunk-35L2F5GD": {
       "file": "chunk-35L2F5GD.js"
+    },
+    "chunk-6I7L6SL7": {
+      "file": "chunk-6I7L6SL7.js"
     },
     "render18-MB5EEXEG": {
       "file": "render18-MB5EEXEG.js"
@@ -102,44 +105,41 @@
     "render16-UWFZFURE": {
       "file": "render16-UWFZFURE.js"
     },
-    "chunk-QXPRF5TW": {
-      "file": "chunk-QXPRF5TW.js"
-    },
-    "chunk-LXW5CBMS": {
-      "file": "chunk-LXW5CBMS.js"
+    "chunk-ZPOHBFYK": {
+      "file": "chunk-ZPOHBFYK.js"
     },
     "chunk-LNJWJNFR": {
       "file": "chunk-LNJWJNFR.js"
     },
-    "chunk-ADJTET2T": {
-      "file": "chunk-ADJTET2T.js"
-    },
-    "chunk-7ZLJL6G3": {
-      "file": "chunk-7ZLJL6G3.js"
-    },
-    "chunk-5QNUNENJ": {
-      "file": "chunk-5QNUNENJ.js"
+    "chunk-QXPRF5TW": {
+      "file": "chunk-QXPRF5TW.js"
     },
     "chunk-2LJ5ZPRD": {
       "file": "chunk-2LJ5ZPRD.js"
     },
-    "chunk-P6LEFFMO": {
-      "file": "chunk-P6LEFFMO.js"
+    "chunk-7CNLDNX4": {
+      "file": "chunk-7CNLDNX4.js"
     },
     "chunk-XOUVCMTI": {
       "file": "chunk-XOUVCMTI.js"
     },
-    "chunk-K354N23T": {
-      "file": "chunk-K354N23T.js"
+    "chunk-7DEPDLGY": {
+      "file": "chunk-7DEPDLGY.js"
     },
-    "chunk-VKRD2RFZ": {
-      "file": "chunk-VKRD2RFZ.js"
+    "chunk-P66EDQ5K": {
+      "file": "chunk-P66EDQ5K.js"
     },
-    "chunk-6I7L6SL7": {
-      "file": "chunk-6I7L6SL7.js"
+    "chunk-J7F3PWWO": {
+      "file": "chunk-J7F3PWWO.js"
     },
     "chunk-SBIUZZPA": {
       "file": "chunk-SBIUZZPA.js"
+    },
+    "chunk-K354N23T": {
+      "file": "chunk-K354N23T.js"
+    },
+    "chunk-TXQI6IYO": {
+      "file": "chunk-TXQI6IYO.js"
     },
     "chunk-ROML32FH": {
       "file": "chunk-ROML32FH.js"

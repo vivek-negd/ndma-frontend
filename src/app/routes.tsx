@@ -27,6 +27,10 @@ import LoginPage from "../web/pages/auth/login";
 import Home from "../web/pages/home/Home";
 import Dashboard from "../admin/pages/Dashboard/Dashboard";
 import { AboutUs } from "../web/pages/aboutUs/AboutUs";
+import { ContactUs } from "../web/pages/contactUs/ContactUs";
+import { OurTeam } from "../web/pages/ourTeam/OurTeam";
+import { TrainingMaterial } from "../web/pages/trainingMaterial/TrainingMaterial";
+import { Glimpse } from "../web/pages/glimps/Glimpse";
 import { YouthOrganisationRecords, BulkYouthOrgUpload } from "../admin/pages/youthOrganizationWorkflow";
 import { YouthOrganisationForm } from "../admin/pages/youthOrganizationWorkflow/YouthOrganisationForm";
 import { FirstDayTrainingForm } from "../admin/pages/trainingWorkflow/FirstDayTrainingForm";
@@ -50,13 +54,19 @@ export const AppRoutes = () => {
     <Routes>
       {/* Public routes - no layout */}
       <Route path="/auth" element={<Auth />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<Navigate to="/home" replace />} />
-      {/* Protected routes - with layout + role guard */}
+      <Route path="/home" element={<Home />} />
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/our-team" element={<OurTeam />} />
+      <Route path="/team" element={<OurTeam />} />
+      <Route path="/training-material" element={<TrainingMaterial />} />
+      <Route path="/glimpse" element={<Glimpse />} />
+      <Route path="/glimps" element={<Navigate to="/glimpse" replace />} />
+      <Route path="/contact-us" element={<ContactUs />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<Navigate to="/home" replace />} />
+      
+      {/* Protected routes with layout and role guard */}
       <Route element={<RoleGuard><MainLayout /></RoleGuard>}>
-        {/* <Route path="/" element={<Navigate to="/dashboard" replace />} /> */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/account" element={<ManageAccount />} />
         <Route path="/pages" element={<Pages />} />
@@ -104,11 +114,10 @@ export const AppRoutes = () => {
         <Route path="/yams-volunteer" element={<YAMSVolunteers />} />
         <Route path="/volunteer-details" element={<UploadedVolunteerList />} />
         <Route path="/batchwise-volunteers-list/:batchId" element={<BatchWiseVolunteerList />} />
-
       </Route>
 
       {/* Catch all */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );
 };

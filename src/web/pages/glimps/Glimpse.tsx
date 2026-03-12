@@ -122,9 +122,9 @@ const categories = [
 
 const archives = ["July 2022", "June 2022", "May 2022", "April 2022", "September 2021", "December 2020"];
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
-export const Glimps: React.FC = () => {
+export const Glimpse: React.FC = () => {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArchive, setSelectedArchive] = useState<string | null>(null);
@@ -407,4 +407,4 @@ export const Glimps: React.FC = () => {
   );
 };
 
-export default Glimps;
+export default Glimpse;

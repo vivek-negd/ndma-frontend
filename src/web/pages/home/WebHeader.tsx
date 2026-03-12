@@ -103,7 +103,7 @@ const WebHeader: React.FC = () => {
               trainings: "/training-material",
               ourTeam: "/our-team",
               contact: "/contact-us",
-              glimps: "/glimps",
+              glimps: "/glimpse",
             };
             if (routes[key]) navigate(routes[key]);
           }}

@@ -32,8 +32,8 @@ const IndiaMap = () => {
   }, []);
 
   return (
-    <div style={{ width: "100%", height: "600px" }}>
-      <div id="map"></div>
+    <div style={{ width: "100%", height: "400px", borderRadius: "12px", overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.1)" }}>
+      <div id="map" style={{ width: "100%", height: "100%" }}></div>
     </div>
   );
 };

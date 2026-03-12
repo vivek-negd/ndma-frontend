@@ -1,0 +1,44 @@
+/* Dark theme contact form styles */
+
+.darkFormInput::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.darkFormInput {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(224, 123, 0, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.darkFormInput:focus,
+.darkFormInput:focus-visible {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(224, 123, 0, 0.8) !important;
+  box-shadow: 0 0 0 2px rgba(224, 123, 0, 0.2) !important;
+}
+
+.darkFormInput:hover {
+  border-color: rgba(224, 123, 0, 0.6) !important;
+}
+
+/* For TextArea */
+.darkFormTextArea {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(224, 123, 0, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.darkFormTextArea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.darkFormTextArea:focus,
+.darkFormTextArea:focus-visible {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(224, 123, 0, 0.8) !important;
+  box-shadow: 0 0 0 2px rgba(224, 123, 0, 0.2) !important;
+}
+
+.darkFormTextArea:hover {
+  border-color: rgba(224, 123, 0, 0.6) !important;
+}
