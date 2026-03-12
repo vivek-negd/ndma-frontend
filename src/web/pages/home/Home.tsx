@@ -21,7 +21,19 @@ const Home = () => {
       <LeadershipSection />
       <VideosGallery />
       <PhotoGallery />
-      <IndiaMap/>
+      
+      {/* India Map Section */}
+      <section
+        style={{
+          backgroundColor: "#ffffff",
+          padding: "24px 80px 36px",
+        }}
+      >
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <IndiaMap />
+        </div>
+      </section>
+      
       {/* <VolunteerPresenceSection /> */}
       <AchievementsSection />
       <TrainingUpdatesSection />
