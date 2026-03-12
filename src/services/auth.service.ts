@@ -70,11 +70,15 @@ export class AuthService {
 
   // Role management
   static setRole(role: string): void {
-    localStorage.setItem('user_role', role);
+    // Normalize legacy server role variants
+    const normalized = role === 'SUPER_ADMIN' ? 'SUPERADMIN' : role;
+    localStorage.setItem('user_role', normalized);
   }
 
   static getRole(): string | null {
-    return localStorage.getItem('user_role');
+    const role = localStorage.getItem('user_role');
+    if (!role) return null;
+    return role === 'SUPER_ADMIN' ? 'SUPERADMIN' : role;
   }
 
   static clearRole(): void {
@@ -88,7 +92,19 @@ export class AuthService {
 
   static getUser(): User | null {
     const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    if (!user) return null;
+    try {
+      const parsed = JSON.parse(user);
+      if (parsed && parsed.user_role === 'SUPER_ADMIN') {
+        parsed.user_role = 'SUPERADMIN';
+        // persist normalized user back to storage
+        localStorage.setItem('user', JSON.stringify(parsed));
+        localStorage.setItem('user_role', 'SUPERADMIN');
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
   }
 
   static clearUser(): void {
@@ -122,6 +138,31 @@ export class AuthService {
       return payload.exp > currentTime;
     } catch {
       return false;
+    }
+  }
+
+  // Create user with privilege (used by SUPERADMIN)
+  // API Endpoint: POST /api/v1/auth/create_user_with_privilege/
+  static async createUserWithPrivilege(payload: any): Promise<ApiResponse<User>> {
+    console.log('=== CREATE USER REQUEST ===');
+    console.log('Endpoint: /auth/create_user_with_privilege/');
+    console.log('Payload:', JSON.stringify(payload, null, 2));
+    
+    try {
+      const response = await commonEndpoint.post<ApiResponse<User>>(
+        '/auth/create_user_with_privilege/', 
+        payload
+      );
+      console.log('=== CREATE USER SUCCESS ===');
+      console.log('Response:', JSON.stringify(response.data, null, 2));
+      return response.data;
+    } catch (error: any) {
+      console.error('=== CREATE USER ERROR ===');
+      console.error('Status:', error?.response?.status);
+      console.error('Status Text:', error?.response?.statusText);
+      console.error('Error Data:', JSON.stringify(error?.response?.data, null, 2));
+      console.error('Error Message:', error?.message);
+      throw error;
     }
   }
 }

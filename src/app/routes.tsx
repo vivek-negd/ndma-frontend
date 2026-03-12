@@ -27,7 +27,7 @@ import LoginPage from "../web/pages/auth/login";
 import Home from "../web/pages/home/Home";
 import Dashboard from "../admin/pages/Dashboard/Dashboard";
 import { AboutUs } from "../web/pages/aboutUs/AboutUs";
-import { YouthOrganisationRecords, BulkYouthOrgUpload } from "../admin/pages/youthOrganizationWorkflow";
+import { YouthOrganisationRecords } from "../admin/pages/youthOrganizationWorkflow";
 import { YouthOrganisationForm } from "../admin/pages/youthOrganizationWorkflow/YouthOrganisationForm";
 import { FirstDayTrainingForm } from "../admin/pages/trainingWorkflow/FirstDayTrainingForm";
 import { FirstDayTrainingRecords } from "../admin/pages/trainingWorkflow/FirstDayTrainingRecords";
@@ -49,7 +49,7 @@ export const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes - no layout */}
-      <Route path="/auth" element={<Auth />} />
+      <Route path="/auth" element={<LoginPage />} />
         <Route path="/home" element={<Home />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/login" element={<LoginPage />} />
@@ -74,7 +74,7 @@ export const AppRoutes = () => {
         <Route path="/users/edit/:id" element={<UserForm />} />
         <Route path="/youth-organization-record" element={<YouthOrganisationRecords />} />
         <Route path="/youth-organization-form" element={<YouthOrganisationForm />} />
-        <Route path="/bulk-youth-org-upload" element={<BulkYouthOrgUpload />} />
+        {/* Bulk upload integrated into Youth Organisation Records; separate route removed */}
         <Route path="/first-day-training-form" element={<FirstDayTrainingForm />} />
         <Route path="/first-day-training-records" element={<FirstDayTrainingRecords />} />
         <Route path="/fourth-day-training-records" element={<FourthDayTrainingRecords />} />

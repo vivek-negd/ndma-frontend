@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { API_BASE_URL } from '../../config'
 
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
@@ -45,6 +45,9 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token')
       window.location.href = '/auth'
     }
+    if (error.response?.status === 403) {
+      window.dispatchEvent(new CustomEvent('api:forbidden', { detail: { url: error.config?.url } }));
+    }
     return Promise.reject(error)
   }
 )
@@ -53,5 +56,6 @@ export const commonEndpoint = {
   get: <T>(url: string) => apiClient.get<T>(url),
   post: <T>(url: string, data?: any) => apiClient.post<T>(url, data),
   put: <T>(url: string, data?: any) => apiClient.put<T>(url, data),
+  patch: <T>(url: string, data?: any) => apiClient.patch<T>(url, data),
   delete: <T>(url: string) => apiClient.delete<T>(url),
 }

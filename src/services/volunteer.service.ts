@@ -110,6 +110,7 @@ export class VolunteerService {
 
   // Coverage / Youth organisation records
   static async getCoverage(filters?: Record<string, any>): Promise<ApiResponse<any>> {
+    console.log('🔹 getCoverage called with filters:', filters);
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -124,10 +125,62 @@ export class VolunteerService {
     }
 
     const query = params.toString();
-    const response = await commonEndpoint.get<ApiResponse<any>>(
-      `/volunteer/coverage/${query ? `?${query}` : ''}`
-    );
-    return response.data;
+    const url = `/volunteer/coverage/${query ? `?${query}` : ''}`;
+    console.log('🔹 getCoverage URL:', url);
+    console.log('🔹 getCoverage full URL:', `${commonEndpoint.get.toString().match(/baseURL[^}]*/)?.[0]} + ${url}`);
+    
+    try {
+      const response = await commonEndpoint.get<ApiResponse<any>>(url);
+      console.log('🔹 getCoverage response status:', response.status);
+      console.log('🔹 getCoverage response data:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('🔹 getCoverage error:', error);
+      console.error('🔹 getCoverage error status:', error.response?.status);
+      console.error('🔹 getCoverage error data:', error.response?.data);
+      throw error;
+    }
+  }
+
+  // Bulk upload history
+  static async getBulkUploadSessions(filters?: {
+    from_date?: string;
+    to_date?: string;
+    state?: string;
+    district?: string;
+    organization?: string;
+    status?: 'success' | 'partial' | 'failed';
+  }): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+    }
+
+    const query = params.toString();
+    const url = `/volunteer/bulk-upload/sessions/${query ? `?${query}` : ''}`;
+    console.log('🔹 getBulkUploadSessions URL:', url);
+
+    try {
+      const response = await commonEndpoint.get<ApiResponse<any>>(url);
+      console.log('🔹 getBulkUploadSessions response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('🔹 getBulkUploadSessions error:', error);
+      throw error;
+    }
+  }
+
+  static async downloadBulkUploadSession(sessionId: string, sessionDownloadUrl?: string): Promise<Blob> {
+    // Use provided session_download_url or construct from sessionId
+    const url = sessionDownloadUrl || `/volunteer/export/?bulk_upload_session_id=${sessionId}`;
+    console.log('🔹 downloadBulkUploadSession URL:', url);
+
+    const response = await commonEndpoint.get(url, { responseType: 'arraybuffer' });
+    return response.data as Blob;
   }
 
   // Training related

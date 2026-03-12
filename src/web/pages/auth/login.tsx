@@ -74,29 +74,45 @@ const LoginPage: React.FC = () => {
     }
     setLoading(true);
     try {
-
       const response = await AuthService.login({ email: values.email, password: values.password });
-      if (response.status_code === 200) {
-        message.success("Login successful!");
-        AuthService.setTokens(response.access, response.refresh);
-        AuthService.setRole(response.user.user_role);
-        AuthService.setUser(response.user);
-        const defaultRoute = ROLE_DEFAULT_ROUTES[response.user.user_role as UserRole] ?? '/dashboard';
-       console.log(defaultRoute,"defaultRoute");
-       
+
+      const loginSucceeded = !!(
+        response && (response.access || response.status_code === 200 || response.success)
+      );
+
+      if (loginSucceeded) {
+        message.success('Login successful!');
+        // tokens may be returned directly or nested; prefer top-level fields
+        const access = (response as any).access || (response as any).data?.access;
+        const refresh = (response as any).refresh || (response as any).data?.refresh;
+        if (access && refresh) AuthService.setTokens(access, refresh);
+
+        // user object may be at different paths
+        const userObj = (response as any).user || (response as any).data?.user;
+        const serverRole = userObj?.user_role || userObj?.role || '';
+
+        // normalize known server role variants
+        const normalizedRole = serverRole === 'SUPER_ADMIN' ? 'SUPERADMIN' : serverRole;
+
+        if (userObj) {
+          const normalizedUser = { ...userObj, user_role: normalizedRole };
+          AuthService.setRole(normalizedRole);
+          AuthService.setUser(normalizedUser);
+        }
+
+        const defaultRoute = (ROLE_DEFAULT_ROUTES as any)[normalizedRole as UserRole] ?? '/dashboard';
+        console.log(defaultRoute, 'defaultRoute');
         navigate(defaultRoute);
-      // navigate('/dashboard');
-        setLoading(false);
       } else {
-        message.error(response.message || "Login failed");
+        message.error((response as any)?.message || 'Login failed');
         generateCaptcha();
-        form.setFieldsValue({ captcha: "" });
+        form.setFieldsValue({ captcha: '' });
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || "Login failed. Please try again.";
+      const errorMessage = error.response?.data?.message || error.message || 'Login failed. Please try again.';
       message.error(errorMessage);
       generateCaptcha();
-      form.setFieldsValue({ captcha: "" });
+      form.setFieldsValue({ captcha: '' });
     } finally {
       setLoading(false);
     }

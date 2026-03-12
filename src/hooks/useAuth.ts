@@ -1,55 +1,33 @@
 import { useState, useEffect } from 'react'
+import { User as AuthUser } from '../types/auth.types'
+import { AuthService } from '../services'
 
-interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-}
+type LocalUser = AuthUser & { role?: string }
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<LocalUser | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing token and validate
     const token = localStorage.getItem('token')
     if (token) {
-      // Validate token and fetch user
-      setIsAuthenticated(true)
-      // Mock user data
-      setUser({
-        id: '1',
-        name: 'Admin User',
-        email: 'admin@example.com',
-        role: 'admin',
-      })
+      const stored = AuthService.getUser()
+      if (stored) {
+        setUser(stored as LocalUser)
+        setIsAuthenticated(true)
+      } else {
+        // token present but no user data — clear stale token
+        localStorage.removeItem('token')
+      }
     }
     setIsLoading(false)
   }, [])
 
-  const login = async (email: string, password: string) => {
-    // Mock login
-    setIsLoading(true)
-    try {
-      // API call here
-      const mockToken = 'mock-token-' + Date.now()
-      localStorage.setItem('token', mockToken)
-      setIsAuthenticated(true)
-      setUser({
-        id: '1',
-        name: 'Admin User',
-        email,
-        role: 'admin',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const logout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('user_role')
     setUser(null)
     setIsAuthenticated(false)
   }
@@ -58,7 +36,6 @@ export const useAuth = () => {
     user,
     isAuthenticated,
     isLoading,
-    login,
     logout,
   }
 }

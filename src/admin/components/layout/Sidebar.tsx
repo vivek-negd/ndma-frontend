@@ -141,9 +141,11 @@ export const Sidebar = () => {
     if (location.pathname.startsWith("/seo")) {
       return "/seo";
     }
+    if (location.pathname.startsWith("/users")) {
+      return "/users";
+    }
     if (
       location.pathname.startsWith("/account") ||
-      location.pathname.startsWith("/users") ||
       location.pathname.startsWith("/rbac")
     ) {
       return "/account";
@@ -162,11 +164,7 @@ export const Sidebar = () => {
       icon: <ApartmentOutlined />,
       label: "Youth Organization Record",
     },
-    {
-      key: "/bulk-youth-org-upload",
-      icon: <UploadOutlined />,
-      label: "Bulk Upload Youth Org",
-    },
+    
     {
       key: "/training-workflow",
       icon: <ReadOutlined />,
@@ -254,31 +252,9 @@ export const Sidebar = () => {
       ],
     },
     {
-      key: "/account",
-      icon: <WalletOutlined />,
-      label: "Account",
-      children: [
-        {
-          key: "/accounts/bank-details",
-          icon: <BankOutlined />,
-          label: "Bank Details",
-        },
-        {
-          key: "/accounts/amount-released",
-          icon: <MoneyCollectOutlined />,
-          label: "Amount Released",
-        },
-        {
-          key: "/accounts/statement-of-expenditure",
-          icon: <BarChartOutlined />,
-          label: "Statement of Expenditure",
-        },
-        {
-          key: "/accounts/uc-details",
-          icon: <FileDoneOutlined />,
-          label: "UC Details",
-        },
-      ],
+      key: "/users",
+      icon: <UsergroupAddOutlined />,
+      label: "User Management",
     },
     {
       key: "/contact",
@@ -368,6 +344,11 @@ export const Sidebar = () => {
       style={{
         backgroundColor: "#0a2e5f",
         borderRight: "1px solid #1a3d7a",
+        position: 'sticky',
+        top: 64,
+        height: 'calc(100vh - 64px)',
+        overflowY: 'auto',
+        zIndex: 5,
       }}
     >
       {/* <SidebarHeader /> */}

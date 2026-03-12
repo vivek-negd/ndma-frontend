@@ -12,7 +12,7 @@ export const MainLayout = () => {
       <Header />
       <Layout>
         <Sidebar />
-        <Layout style={{ padding: "24px", background: "#0f1966ff!important" }}>
+        <Layout style={{ height: 'calc(100vh - 64px)', overflowY: 'auto', padding: "24px", background: "#0f1966ff!important" }}>
           <Content
             style={{
               padding: 0,

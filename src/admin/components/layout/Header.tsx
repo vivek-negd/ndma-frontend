@@ -88,6 +88,9 @@ const AppHeader: React.FC = () => {
         justifyContent: "space-between",
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         borderBottom: "1px solid #1a3d7a",
+        position: 'sticky',
+        top: 0,
+        zIndex: 30,
       }}
     >
       {/* ── LEFT: Logos + Brand ── */}

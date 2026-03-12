@@ -35,9 +35,19 @@ export const TrainingScheduleForm: React.FC = () => {
       try {
         setStatesLoading(true);
         const res = await CommonService.getStates();
-        console.log(res,"state");
-        setStates(res ?? (res as any) ?? []);
-      } catch {
+        // Normalize different API shapes: array, { data: [...] }, { data: { data: [...] } }
+        let list: any[] = [];
+        if (Array.isArray(res)) list = res;
+        else if (res && Array.isArray((res as any).data)) list = (res as any).data;
+        else if (res && (res as any).data && Array.isArray((res as any).data.data)) list = (res as any).data.data;
+        else if (res && (res as any).data && Array.isArray((res as any).data.states)) list = (res as any).data.states;
+        else list = [];
+
+        // Ensure each state has { id, name }
+        const normalized = list.map((s: any) => ({ id: s.id ?? s.state_id ?? s.code ?? s.name, name: s.name ?? s.state_name ?? String(s) }));
+        setStates(normalized);
+      } catch (e) {
+        console.error('Failed to load states', e);
         message.error("Failed to load states");
       } finally {
         setStatesLoading(false);
@@ -110,9 +120,18 @@ export const TrainingScheduleForm: React.FC = () => {
     try {
       setDistrictsLoading(true);
       const res = await CommonService.getDistrictsByState(stateId);
-      console.log(res?.data?.districts? res : [], "districts");
-      setDistricts(Array.isArray(res?.data?.districts) ? res.data.districts : []);
-    } catch {
+      // Normalize response shapes similar to states
+      let list: any[] = [];
+      if (Array.isArray(res)) list = res;
+      else if (res && Array.isArray((res as any).data)) list = (res as any).data;
+      else if (res && (res as any).data && Array.isArray((res as any).data.districts)) list = (res as any).data.districts;
+      else if (res && (res as any).districts && Array.isArray((res as any).districts)) list = (res as any).districts;
+      else list = [];
+
+      const normalized = list.map((d: any) => ({ id: d.id ?? d.district_id ?? d.lgd_code ?? d.name, name: d.name ?? d.district_name ?? String(d) }));
+      setDistricts(normalized);
+    } catch (err) {
+      console.error('Failed to load districts', err);
       message.error("Failed to load districts");
       setDistricts([]);
     } finally {
@@ -127,27 +146,55 @@ export const TrainingScheduleForm: React.FC = () => {
       
       // Find selected organization to get its name and code
       const selectedOrg = orgTypes.find((o: any) => o.id === values.organization);
-      
+      // Validate dates
+      const start = values.startDate;
+      const end = values.endDate;
+      if (!start || !end) {
+        message.error('Start date and end date are required');
+        setLoading(false);
+        return;
+      }
+
+      // Ensure schedule covers at least 7 days (Day 1..Day 7)
+      const daysRange = end.diff(start, 'days');
+      if (daysRange < 6) {
+        message.error('Schedule must span at least 7 days (start and end inclusive)');
+        setLoading(false);
+        return;
+      }
+
+      // Build 7 sessions starting from start date
+      const sessions: any[] = [];
+      for (let i = 0; i < 7; i++) {
+        const sessionDate = start.clone().add(i, 'day').format('YYYY-MM-DD');
+        sessions.push({
+          day_label: `Day ${i + 1}`,
+          date: sessionDate,
+          upload_option: 'mandatory',
+          notes: `Day ${i + 1}`
+        });
+      }
+
       // Transform form data to API payload format
       const payload = {
         state: values.state,
         district: values.district,
         organization: values.organization,
-        organization_name: values.organizationName || selectedOrg?.name || 'Training Center',
+        organization_name: selectedOrg?.name || 'Training Center',
         organization_type: selectedOrg?.code || 'INSTITUTE',
         number_of_volunteers: parseInt(values.numberOfVolunteers, 10),
         batch_no: values.batchNumber,
         institute_details: values.venue,
         trainers_details: values.trainers,
-        start_date: values.startDate ? values.startDate.format('YYYY-MM-DD') : null,
-        end_date: values.endDate ? values.endDate.format('YYYY-MM-DD') : null,
+        start_date: start.format('YYYY-MM-DD'),
+        end_date: end.format('YYYY-MM-DD'),
         status: 'DRAFT',
-        sessions: []
+        sessions
       };
       
       console.log("API Payload:", payload);
       
-      // Call API to create training schedule
+      // Call API to create training schedule (with 7 sessions)
       const response = await CommonService.createTrainingSchedule(payload);
       console.log('Create training schedule response:', response);
       
@@ -237,17 +284,13 @@ export const TrainingScheduleForm: React.FC = () => {
                   optionFilterProp="children"
                 >
                   {orgTypes.map((o) => (
-                    <Select.Option key={o.id} value={o.id}>{o.name}</Select.Option>
+                    <Select.Option key={o.id} value={o.id}>{o.code || o.name || o.id}</Select.Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
 
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item label="Organization Name" name="organizationName" rules={[{ required: true, message: "Please enter organization name!" }]}>
-                <Input placeholder="e.g. Training Center Patna" />
-              </Form.Item>
-            </Col>
+            {/* Organization Name removed from UI per request */}
           </Row>
 
           <Row gutter={16}>

@@ -1,6 +1,8 @@
 import { commonEndpoint } from '../server/endpoints/common.endpoint';
 import { Training, CreateTrainingRequest, UpdateTrainingRequest, TrainingFilters, TrainingScheduleRequest } from '../types/training.types';
 import { ApiResponse, PaginatedResponse } from '../types/common.types';
+import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 export class TrainingService {
   // Basic CRUD operations
@@ -138,6 +140,48 @@ export class TrainingService {
     return response.data;
   }
 
+  // Session (day) operations for a training schedule
+  static async createSession(scheduleId: string | number, sessionData: any): Promise<ApiResponse<any>> {
+    const response = await commonEndpoint.post<ApiResponse<any>>(`/training-schedules/${scheduleId}/sessions/`, sessionData);
+    return response.data;
+  }
+
+  static async uploadSessionMedia(formData: FormData): Promise<ApiResponse<any>> {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(
+      `${API_BASE_URL}/training-session-media/upload_for_session/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(token && { Authorization: `Bearer ${token}` })
+        }
+      }
+    );
+    return response.data;
+  }
+
+  static async getSessionMediaCount(sessionId: string | number): Promise<ApiResponse<{ count: number }>> {
+    const response = await commonEndpoint.get<ApiResponse<any>>(`/training-session-media/session_media_count/?session_id=${sessionId}`);
+    return response.data;
+  }
+
+  static async getSessionDetails(scheduleId: string | number, sessionId: string | number): Promise<ApiResponse<any>> {
+    const response = await commonEndpoint.get<ApiResponse<any>>(`/training-schedules/${scheduleId}/sessions/${sessionId}/`);
+    return response.data;
+  }
+
+  static async deleteSession(scheduleId: string | number, sessionId: string | number): Promise<ApiResponse<any>> {
+    const response = await commonEndpoint.delete<ApiResponse<any>>(`/training-schedules/${scheduleId}/sessions/${sessionId}/`);
+    return response.data;
+  }
+
+  // Delete a specific media item for a session: DELETE /training-schedules/{scheduleId}/sessions/{sessionId}/{mediaId}/
+  static async deleteSessionMedia(scheduleId: string | number, sessionId: string | number, mediaId: string | number): Promise<ApiResponse<any>> {
+    const response = await commonEndpoint.delete<ApiResponse<any>>(`/training-schedules/${scheduleId}/sessions/${sessionId}/${mediaId}/`);
+    return response.data;
+  }
+
   // Training schedules by role
   static async getTrainingSchedules(role?: 'SDMA' | 'NDMA' | 'SUPER_ADMIN', filters?: any): Promise<ApiResponse<PaginatedResponse<Training>>> {
     const params = new URLSearchParams();
@@ -161,7 +205,7 @@ export class TrainingService {
       });
     }
     
-    const response = await commonEndpoint.get<ApiResponse<PaginatedResponse<Training>>>(`/api/v1/training-schedules/?${params}`);
+    const response = await commonEndpoint.get<ApiResponse<PaginatedResponse<Training>>>(`/training-schedules/?${params}`);
     return response.data;
   }
 }

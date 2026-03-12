@@ -27,6 +27,7 @@ const { Title, Text } = Typography;
 export const FourthDayTrainingForm = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
   const [states, setStates] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
@@ -46,9 +47,12 @@ export const FourthDayTrainingForm = () => {
       const userState = AuthService.getUserState();
       if (userState.state_id) {
         console.log('Auto-filling state:', userState);
-        form.setFieldValue('state', userState.state_id);
+        // Find matching normalized state id and use that exact id value
+        const match = states.find((s: any) => String(s.id) === String(userState.state_id));
+        const valueToSet = match ? match.id : userState.state_id;
+        form.setFieldValue('state', valueToSet);
         // Fetch districts for the auto-filled state
-        handleStateChange(userState.state_id);
+        handleStateChange(valueToSet);
       } else {
         console.log('No user state found');
       }
@@ -61,10 +65,10 @@ export const FourthDayTrainingForm = () => {
       const userDistrict = AuthService.getUserDistrict();
       if (userDistrict.district_id) {
         console.log('Auto-filling district:', userDistrict);
-        // Check if the district exists in the loaded districts
-        const districtExists = districts.some((d: any) => d.id === userDistrict.district_id);
-        if (districtExists) {
-          form.setFieldValue('district', userDistrict.district_id);
+        // Find matching district by stringified id to tolerate type differences
+        const match = districts.find((d: any) => String(d.id) === String(userDistrict.district_id));
+        if (match) {
+          form.setFieldValue('district', match.id);
         } else {
           console.log('District not found in loaded list:', userDistrict.district_id);
         }
@@ -79,19 +83,16 @@ export const FourthDayTrainingForm = () => {
       setStatesLoading(true);
       const res = await CommonService.getStates();
       // Handle direct array response
-      if (Array.isArray(res)) {
-        setStates(res as any);
-      }
-      // Handle wrapped response { data: [...] }
-      else if (res.data && Array.isArray(res.data)) {
-        setStates(res.data as any);
-      }
-      // Handle paginated response { data: { data: [...] } }
-      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-        setStates((res.data as any).data as any);
-      } else {
-        setStates([]);
-      }
+      // Normalize different shapes into an array of { id, name }
+      let list: any[] = [];
+      if (Array.isArray(res)) list = res;
+      else if (res && Array.isArray((res as any).data)) list = (res as any).data;
+      else if (res && (res as any).data && Array.isArray((res as any).data.data)) list = (res as any).data.data;
+      else if (res && (res as any).data && Array.isArray((res as any).data.states)) list = (res as any).data.states;
+      else list = [];
+
+      const normalized = list.map((s: any) => ({ id: s.id ?? s.state_id ?? s.code ?? s.name, name: s.name ?? s.state_name ?? String(s) }));
+      setStates(normalized as any[]);
     } catch (error) {
       console.error("State fetch error:", error);
       message.error("Failed to load states");
@@ -160,31 +161,16 @@ export const FourthDayTrainingForm = () => {
     try {
       setDistrictsLoading(true);
       const res = await CommonService.getDistrictsByState(String(stateId));
-      console.log('Districts response:', res);
-      
-      // Handle direct array response
-      if (Array.isArray(res)) {
-        console.log('Direct array response');
-        setDistricts(res as any);
-      }
-      // Handle wrapped response { data: [...] }
-      else if (res.data && Array.isArray(res.data)) {
-        console.log('Wrapped array response');
-        setDistricts(res.data as any);
-      }
-      // Handle district API response { data: { districts: [...] } }
-      else if (res.data && (res.data as any).districts && Array.isArray((res.data as any).districts)) {
-        console.log('District API response');
-        setDistricts((res.data as any).districts as any);
-      }
-      // Handle paginated response { data: { data: [...] } }
-      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-        console.log('Paginated response');
-        setDistricts((res.data as any).data as any);
-      } else {
-        console.log('No districts found');
-        setDistricts([]);
-      }
+      // Normalize response shapes similar to states
+      let list: any[] = [];
+      if (Array.isArray(res)) list = res;
+      else if (res && Array.isArray((res as any).data)) list = (res as any).data;
+      else if (res && (res as any).data && Array.isArray((res as any).data.districts)) list = (res as any).data.districts;
+      else if (res && (res as any).districts && Array.isArray((res as any).districts)) list = (res as any).districts;
+      else list = [];
+
+      const normalized = list.map((d: any) => ({ id: d.id ?? d.district_id ?? d.lgd_code ?? d.name, name: d.name ?? d.district_name ?? String(d) }));
+      setDistricts(normalized as any[]);
     } catch (error) {
       console.error("Districts fetch error:", error);
       message.error("Failed to load districts");
@@ -197,11 +183,94 @@ export const FourthDayTrainingForm = () => {
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
-      console.log("Fourth Day Training Data:", values);
-      message.success("Fourth day training saved successfully!");
+
+      // Validation: All required fields
+      if (!values.state || !values.district || !values.organization || !values.date) {
+        messageApi.error('Please fill all required fields');
+        setLoading(false);
+        return;
+      }
+
+      // Get selected organization details
+      const selectedOrg = orgTypes.find((o: any) => o.id === values.organization);
+      if (!selectedOrg) {
+        messageApi.error('Invalid organization selected');
+        setLoading(false);
+        return;
+      }
+
+      // ===== STEP 1: Create Training Day =====
+      const payload = {
+        state: Number(values.state),
+        district: Number(values.district),
+        organization_name: selectedOrg.name || '',
+        organization_type: selectedOrg.code || '',
+        number_of_volunteers: Number(values.numberOfVolunteers) || 0,
+        batch_no: values.batchNumber || '',
+        institute_details: values.instituteDetails || '',
+        trainers_details: values.trainersDetails || '',
+        day_date: values.date ? values.date.format('YYYY-MM-DD') : null,
+        day: 4,
+        day_notes: ''
+      };
+
+      console.log('📤 Submitting payload:', JSON.stringify(payload, null, 2));
+      const createRes = await CommonService.createDaywiseTraining(payload);
+      console.log('📥 API Response:', createRes);
+
+      // Extract session_id from response (following guide structure)
+      let sessionId: number | null = null;
+      
+      // Try different response structures
+      if (createRes?.data?.session?.id) {
+        sessionId = createRes.data.session.id;
+        console.log('✅ Session ID found at .data.session.id:', sessionId);
+      } else if (createRes?.session?.id) {
+        sessionId = createRes.session.id;
+        console.log('✅ Session ID found at .session.id:', sessionId);
+      } else if (createRes?.data?.id) {
+        sessionId = createRes.data.id;
+        console.log('✅ Session ID found at .data.id:', sessionId);
+      }
+
+      if (!sessionId) {
+        console.error('❌ Could not extract session ID from response:', createRes);
+        messageApi.error('Training created but session ID not found in response');
+        form.resetFields();
+        setFileList([]);
+        setLoading(false);
+        return;
+      }
+
+      // ===== STEP 2: Upload Photos (if provided) =====
+      if (fileList && fileList.length > 0) {
+        console.log(`📸 Uploading ${fileList.length} photo(s) for session ${sessionId}`);
+        const filesToUpload = fileList.map((f: any) => f.originFileObj || f);
+        
+        try {
+          const uploadRes = await CommonService.uploadSessionPhotos(sessionId, filesToUpload);
+          console.log('📥 Upload Response:', uploadRes);
+          const uploadedCount = uploadRes?.data?.length || uploadRes?.uploaded?.length || fileList.length;
+          messageApi.success(`✅ Training created! ${uploadedCount} photo(s) uploaded`);
+        } catch (uploadErr) {
+          console.error('⚠️ Photo upload failed:', uploadErr);
+          messageApi.warning('Training created but photo upload failed');
+        }
+      } else {
+        messageApi.success('✅ Training created successfully!');
+      }
+
+      // Reset form
       form.resetFields();
-    } catch (error) {
-      message.error("Failed to save training data!");
+      setFileList([]);
+      
+      // Navigate back after 1 second
+      setTimeout(() => navigate(-1), 1000);
+      
+    } catch (error: any) {
+      console.error('❌ Submit error:', error);
+      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to save training';
+      messageApi.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -293,7 +362,7 @@ export const FourthDayTrainingForm = () => {
                   optionFilterProp="children"
                 >
                   {orgTypes.map((o) => (
-                    <Select.Option key={o.id} value={o.id}>{o.name}</Select.Option>
+                    <Select.Option key={o.id} value={o.id}>{o.code || o.name || o.id}</Select.Option>
                   ))}
                 </Select>
               </Form.Item>

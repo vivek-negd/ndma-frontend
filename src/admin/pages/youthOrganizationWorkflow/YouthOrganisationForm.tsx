@@ -18,6 +18,7 @@ import {
   Spin,
   Table,
   Tag,
+  Modal,
 } from "antd";
 import {
   InboxOutlined,
@@ -26,10 +27,11 @@ import {
   ArrowLeftOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 import { useNavigate } from "react-router-dom";
-import { CommonService } from "../../../services";
+// services imported below (combined import)
 import Paragraph from "antd/es/typography/Paragraph";
 import { CommonService, AuthService } from "../../../services";
 
@@ -46,62 +48,9 @@ export const YouthOrganisationForm: React.FC = () => {
   const [districts, setDistricts] = useState<any[]>([]);
   const [orgTypes, setOrgTypes] = useState<any[]>([]);
   const [statesLoading, setStatesLoading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<any>(null);
-
-  const [states, setStates] = useState<any[]>([]);
-  const [districts, setDistricts] = useState<any[]>([]);
-  const [orgTypes, setOrgTypes] = useState<any[]>([]);
-  const [statesLoading, setStatesLoading] = useState(false);
   const [districtsLoading, setDistrictsLoading] = useState(false);
   const [orgTypesLoading, setOrgTypesLoading] = useState(false);
-
-  useEffect(() => {
-     const fetchStates = async () => {
-       try {
-         setStatesLoading(true);
-         const res = await CommonService.getStates();
-         console.log(res,"state");
-         setStates(res ?? (res as any) ?? []);
-       } catch {
-         message.error("Failed to load states");
-       } finally {
-         setStatesLoading(false);
-       }
-     };
- 
-     const fetchOrgTypes = async () => {
-       try {
-         setOrgTypesLoading(true);
-         const res = await CommonService.getOrgTypes();
-         if(res.status_code === 200){
-           console.log(res,"org types");
-           setOrgTypes((res.organization_types as any) ?? []);
-         }
-       } catch {
-         message.error("Failed to load organization types");
-       } finally {
-         setOrgTypesLoading(false);
-       }
-     };
- 
-     fetchStates();
-     fetchOrgTypes();
-   }, []);
-
-   const handleStateChange = async (stateId: string) => {
-      form.setFieldValue("district", undefined);
-      setDistricts([]);
-      try {
-        setDistrictsLoading(true);
-        const res = await CommonService.getDistrictsByState(stateId);
-        console.log(res?.data?.districts? res : [], "districts");
-        setDistricts(Array.isArray(res?.data?.districts) ? res.data.districts : []);
-      } catch {
-        message.error("Failed to load districts");
-      } finally {
-        setDistrictsLoading(false);
-      }
-    };
+  const [uploadResult, setUploadResult] = useState<any>(null);
 
   const allowedTypes = [
     "application/vnd.ms-excel",
@@ -111,6 +60,7 @@ export const YouthOrganisationForm: React.FC = () => {
 
   // Fetch states on component mount
   useEffect(() => {
+    console.log('🔹 YouthOrganisationForm mounted');
     fetchStates();
     fetchOrgTypes();
   }, []);
@@ -141,15 +91,19 @@ export const YouthOrganisationForm: React.FC = () => {
 
   const fetchStates = async () => {
     try {
+      console.log('🔹 Fetching states...');
       setStatesLoading(true);
       const res = await CommonService.getStates();
+      console.log('🔹 States response:', res);
       if (Array.isArray(res)) {
+        console.log('🔹 States (array):', res);
         setStates(res);
       } else if (res?.data && Array.isArray(res.data)) {
+        console.log('🔹 States (res.data):', res.data);
         setStates(res.data);
       }
     } catch (error) {
-      console.error('Failed to fetch states:', error);
+      console.error('🔹 ❌ Failed to fetch states:', error);
       message.error('Failed to load states');
     } finally {
       setStatesLoading(false);
@@ -158,7 +112,9 @@ export const YouthOrganisationForm: React.FC = () => {
 
   const handleStateChange = async (stateId: number) => {
     try {
+      console.log('🔹 State changed to:', stateId);
       const res = await CommonService.getDistrictsByState(String(stateId));
+      console.log('🔹 Districts response:', res);
       let districtList = [];
       if (res && typeof res === 'object') {
         if (Array.isArray(res)) {
@@ -171,10 +127,11 @@ export const YouthOrganisationForm: React.FC = () => {
           districtList = (res as any).data;
         }
       }
+      console.log('🔹 Districts loaded:', districtList.length);
       setDistricts(districtList);
       form.setFieldValue('district', undefined);
     } catch (error) {
-      console.error('Failed to fetch districts:', error);
+      console.error('🔹 ❌ Failed to fetch districts:', error);
       message.error('Failed to load districts');
       setDistricts([]);
     }
@@ -182,7 +139,9 @@ export const YouthOrganisationForm: React.FC = () => {
 
   const fetchOrgTypes = async () => {
     try {
+      console.log('🔹 Fetching organization types...');
       const res = await CommonService.getOrgTypes();
+      console.log('🔹 Org types response:', res);
       let orgTypesList = [];
       if (res && typeof res === 'object') {
         if (Array.isArray(res)) {
@@ -195,9 +154,10 @@ export const YouthOrganisationForm: React.FC = () => {
           orgTypesList = (res as any).data;
         }
       }
+      console.log('🔹 Org types loaded:', orgTypesList.length);
       setOrgTypes(orgTypesList);
     } catch (error) {
-      console.error('Failed to fetch organization types:', error);
+      console.error('🔹 ❌ Failed to fetch organization types:', error);
       message.error('Failed to load organization types');
     }
   };
@@ -219,7 +179,9 @@ export const YouthOrganisationForm: React.FC = () => {
   };
 
   const handleUpload = async () => {
+    console.log('🔹 Upload button clicked');
     if (fileList.length === 0) {
+      console.log('🔹 ❌ No file selected');
       message.warning("Please select a file first.");
       return;
     }
@@ -227,47 +189,62 @@ export const YouthOrganisationForm: React.FC = () => {
     try {
       // Get and validate form fields
       const formValues = await form.validateFields();
-      console.log('Form values:', formValues);
+      console.log('🔹 Form values:', formValues);
 
       // Build FormData with correct format for backend
       const formData = new FormData();
       
       // REQUIRED: File
       formData.append('file', fileList[0]);
-      
-      // Get organization name/id
+
+      // Attach organization id
       if (formValues.organization) {
-        formData.append('organization_id', formValues.organization);
+        formData.append('organization_id', String(formValues.organization));
       }
-      
-      // Get state name from selected state ID
+
+      // Attach state and district names
       if (formValues.state) {
-        const stateName = states.find(s => s.id === formValues.state)?.name;
-        if (stateName) {
-          formData.append('state_name', stateName);
-        }
+        const stateName = states.find((s) => s.id === formValues.state)?.name;
+        if (stateName) formData.append('state_name', stateName);
       }
-      
-      // Get district name from selected district ID
+
       if (formValues.district) {
-        const districtName = districts.find(d => d.id === formValues.district)?.name;
-        if (districtName) {
-          formData.append('district_name', districtName);
-        }
+        const districtName = districts.find((d) => d.id === formValues.district)?.name;
+        if (districtName) formData.append('district_name', districtName);
+      }
+
+      // Expected count of volunteers
+      if (formValues.numberOfVolunteers !== undefined) {
+        formData.append('expected_count', String(formValues.numberOfVolunteers));
+      }
+
+      // Date - format to ISO if moment object
+      if (formValues.date) {
+        const dt = formValues.date?.toISOString ? formValues.date.toISOString() : String(formValues.date);
+        formData.append('date', dt);
       }
 
       setLoading(true);
+      console.log('🔹 Uploading file...');
 
+      // Use volunteers bulk upload endpoint which exists on the backend
       const response = await CommonService.uploadVolunteersBulk(formData);
+      console.log('🔹 Upload response:', response);
       
       // Store the upload result for display (response from API)
       const uploadData = (response as any)?.data || response;
+      console.log('🔹 Extracted uploadData:', uploadData);
+      console.log('🔹 uploadData.errors type:', typeof uploadData?.errors, 'is array:', Array.isArray(uploadData?.errors));
+      if (uploadData?.errors && Array.isArray(uploadData.errors)) {
+        console.log('🔹 First error:', uploadData.errors[0]);
+      }
       setUploadResult(uploadData);
       
       // Show success/warning message based on response
       const createdCount = (uploadData as any)?.created_count || 0;
       const errorCount = (uploadData as any)?.error_count || 0;
       const warningCount = (uploadData as any)?.warnings?.length || 0;
+      console.log('🔹 Upload summary - Created:', createdCount, 'Errors:', errorCount, 'Warnings:', warningCount);
       
       if (errorCount === 0 && warningCount === 0) {
         message.success(`Successfully created ${createdCount} youth organization(s)!`);
@@ -295,13 +272,330 @@ export const YouthOrganisationForm: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('Upload error:', error);
-      console.error('Error response:', error?.response);
-      console.error('Error status:', error?.response?.status);
-      console.error('Error data:', error?.response?.data);
-      message.error(error?.response?.data?.message || "Upload failed!");
+      console.log('🔹 ✅ Upload completed');
+      console.error('🔹 ❌ Upload error:', error);
+      console.error('🔹 Error response:', error?.response);
+      setLoading(false);
+      
+      const errorData = error?.response?.data;
+      console.error('🔹 Error data:', errorData);
+      
+      // Check if there are location mismatch errors
+      if (errorData?.data?.mismatched_rows && Array.isArray(errorData.data.mismatched_rows)) {
+        const mismatchedRows = errorData.data.mismatched_rows;
+        
+        // Look up state and district names for expected values
+        const expectedStateName = states.find(s => s.id === errorData.data.expected_state_id)?.name || 'Unknown';
+        const expectedDistrictName = districts.find(d => d.id === errorData.data.expected_district_id)?.name || 'Unknown';
+        
+        Modal.error({
+          title: '❌ Location Mismatch Error',
+          width: 700,
+          content: (
+            <div>
+              <p style={{ marginBottom: 16 }}>
+                <strong>{errorData.message}</strong>
+              </p>
+              
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ marginBottom: 8 }}>
+                  <strong>Your assigned location:</strong>
+                </p>
+                <div style={{ 
+                  backgroundColor: '#f0f2f5', 
+                  padding: '12px', 
+                  borderRadius: '4px',
+                  borderLeft: '4px solid #1890ff'
+                }}>
+                  {errorData.data.expected_state_id && (
+                    <div><strong>State:</strong> {expectedStateName} (ID: {errorData.data.expected_state_id})</div>
+                  )}
+                  {errorData.data.expected_district_id && (
+                    <div><strong>District:</strong> {expectedDistrictName} (ID: {errorData.data.expected_district_id})</div>
+                  )}
+                </div>
+              </div>
+
+              <p style={{ marginBottom: 8 }}>
+                <strong>Rows with mismatches ({mismatchedRows.length}):</strong>
+              </p>
+              
+              <Table
+                dataSource={mismatchedRows.map((row: any, idx: number) => ({
+                  key: idx,
+                  rowNumber: row.row_number,
+                  state: row.state_name || 'N/A',
+                  stateId: row.state_id || 'N/A',
+                  expectedStateId: row.expected_state_id,
+                  expectedStateName: states.find((s: any) => s.id === row.expected_state_id)?.name || 'N/A',
+                  district: row.district_name || 'N/A',
+                  districtId: row.district_id || 'N/A',
+                  expectedDistrictId: row.expected_district_id,
+                  expectedDistrictName: districts.find((d: any) => d.id === row.expected_district_id)?.name || 'N/A',
+                }))}
+                columns={[
+                  {
+                    title: "Row",
+                    dataIndex: "rowNumber",
+                    key: "rowNumber",
+                    width: 60,
+                    render: (text) => <Tag color="red">{text}</Tag>,
+                  },
+                  {
+                    title: "Your Data",
+                    key: "yourData",
+                    render: (_, record: any) => (
+                      <div style={{ fontSize: '12px' }}>
+                        <div><strong>State:</strong> {record.state} (ID: {record.stateId})</div>
+                        <div><strong>District:</strong> {record.district} (ID: {record.districtId})</div>
+                      </div>
+                    ),
+                  },
+                  {
+                    title: "Expected",
+                    key: "expected",
+                    render: (_, record: any) => (
+                      <div style={{ fontSize: '12px' }}>
+                        <div><strong>State:</strong> {record.expectedStateName} (ID: {record.expectedStateId})</div>
+                        <div><strong>District:</strong> {record.expectedDistrictName} (ID: {record.expectedDistrictId})</div>
+                      </div>
+                    ),
+                  },
+                ]}
+                pagination={false}
+                size="small"
+              />
+              
+              <p style={{ marginTop: 16, color: '#999', fontSize: 12 }}>
+                Your organization can only upload volunteers for your assigned state and district. Please update the Excel file to match your location.
+              </p>
+            </div>
+          ),
+        });
+        message.error('Location mismatch: Check your state and district values.');
+      }
+      // Check if there are database/processing errors in the response
+      else if (errorData?.data?.errors && Array.isArray(errorData.data.errors)) {
+        const dbErrors = errorData.data.errors;
+        const createdCount = errorData.data.created_count || 0;
+        const totalRows = errorData.data.total_rows || 0;
+        const warnings = errorData.data.warnings || [];
+        
+        // Helper function to parse error messages
+        const parseErrorMessage = (errorStr: string): string => {
+          if (!errorStr) return 'Unknown error';
+          
+          // Match duplicate key errors: Duplicate entry '...' for key '...'
+          const duplicateMatch = errorStr.match(/Duplicate entry '([^']+)' for key '([^']+)'/);
+          if (duplicateMatch) {
+            const [, value, field] = duplicateMatch;
+            const fieldNames: Record<string, string> = {
+              'aadhar': 'Aadhar Number',
+              'mis_id': 'MIS ID',
+              'mobile': 'Mobile Number',
+              'email': 'Email Address',
+              'mybharat_id': 'MyBharat ID',
+            };
+            const friendlyField = fieldNames[field] || field;
+            return `⚠️ Duplicate ${friendlyField}: "${value}" already exists in the database`;
+          }
+          
+          // Match transaction errors
+          if (errorStr.includes('You can\'t execute queries until the end of the \'atomic\' block')) {
+            return '⚠️ Database constraint error: This usually occurs when there are duplicate values';
+          }
+          
+          // If it's still a tuple/list format, clean it up
+          if (errorStr.startsWith('(')) {
+            const match = errorStr.match(/"([^"]+)"/);
+            if (match) return match[1];
+          }
+          
+          return errorStr;
+        };
+        
+        Modal.error({
+          title: '❌ Upload Failed - Errors Occurred',
+          width: 800,
+          content: (
+            <div>
+              <p style={{ marginBottom: 16 }}>
+                <strong>{errorData.message}</strong>
+              </p>
+              
+              <div style={{ marginBottom: 16, display: 'flex', gap: 16 }}>
+                <div style={{ flex: 1, backgroundColor: '#f6f8fb', padding: '12px', borderRadius: '4px', borderLeft: '4px solid #52c41a' }}>
+                  <div style={{ fontSize: '12px', color: '#666' }}>Created</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#52c41a' }}>{createdCount}</div>
+                </div>
+                <div style={{ flex: 1, backgroundColor: '#fff2f0', padding: '12px', borderRadius: '4px', borderLeft: '4px solid #ff4d4f' }}>
+                  <div style={{ fontSize: '12px', color: '#666' }}>Errors</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff4d4f' }}>{errorData.data.error_count || 0}</div>
+                </div>
+                <div style={{ flex: 1, backgroundColor: '#fffbe6', padding: '12px', borderRadius: '4px', borderLeft: '4px solid #faad14' }}>
+                  <div style={{ fontSize: '12px', color: '#666' }}>Total Rows</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#faad14' }}>{totalRows}</div>
+                </div>
+              </div>
+
+              <p style={{ marginBottom: 8, fontWeight: 'bold' }}>
+                Error Details:
+              </p>
+              
+              <Table
+                dataSource={dbErrors.map((err: any, idx: number) => ({
+                  key: idx,
+                  rowNumber: (err.index || 0) + 2, // +2 because header row and 0-indexed
+                  misId: err.data?.mis_id || 'N/A',
+                  name: err.data?.name || 'N/A',
+                  error: parseErrorMessage(err.error || 'Unknown error'),
+                }))}
+                columns={[
+                  {
+                    title: "Row",
+                    dataIndex: "rowNumber",
+                    key: "rowNumber",
+                    width: 60,
+                    render: (text) => <Tag color="red">{text}</Tag>,
+                  },
+                  {
+                    title: "MIS ID",
+                    dataIndex: "misId",
+                    key: "misId",
+                    width: 100,
+                  },
+                  {
+                    title: "Name",
+                    dataIndex: "name",
+                    key: "name",
+                    width: 150,
+                  },
+                  {
+                    title: "Error Message",
+                    dataIndex: "error",
+                    key: "error",
+                    render: (text) => (
+                      <div style={{ fontSize: '12px', color: '#666', maxWidth: '300px', whiteSpace: 'normal' }}>
+                        {text}
+                      </div>
+                    ),
+                  },
+                ]}
+                pagination={false}
+                size="small"
+                scroll={{ x: true }}
+              />
+
+              {warnings && warnings.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <p style={{ marginBottom: 8, fontWeight: 'bold', color: '#faad14' }}>⚠️ Warnings:</p>
+                  <Alert
+                    message="Upload Warnings"
+                    description={
+                      <ul style={{ margin: 0, paddingLeft: 20 }}>
+                        {warnings.map((warning: any, idx: number) => {
+                          let warningText = '';
+                          
+                          if (typeof warning === 'string') {
+                            // Parse warning text
+                            if (warning.includes('Row count does not match')) {
+                              warningText = '📊 The number of rows in your Excel file does not match the expected count you specified.';
+                            } else if (warning.includes('SECURITY')) {
+                              warningText = '🔒 SECURITY: All volunteers will be assigned to your organization\'s assigned state and district, regardless of the values in your Excel file.';
+                            } else {
+                              warningText = warning;
+                            }
+                          } else if (warning?.message) {
+                            warningText = warning.message;
+                          } else if (warning?.expected_count) {
+                            warningText = `📊 Expected ${warning.expected_count} rows but found ${warning.actual_rows} rows`;
+                          } else {
+                            warningText = JSON.stringify(warning);
+                          }
+                          
+                          return <li key={idx} style={{ fontSize: '12px' }}>{warningText}</li>;
+                        })}
+                      </ul>
+                    }
+                    type="warning"
+                    showIcon
+                  />
+                </div>
+              )}
+
+              <p style={{ marginTop: 16, color: '#999', fontSize: 12 }}>
+                <strong>💡 Troubleshooting:</strong>
+                <ul style={{ margin: '8px 0 0 20px', fontSize: '12px' }}>
+                  <li><strong>Duplicate Aadhar Number:</strong> The Aadhar number already exists. Ensure each person has a unique Aadhar number.</li>
+                  <li><strong>Duplicate MIS ID:</strong> The MIS ID already exists. Use a new MIS ID for each volunteer.</li>
+                  <li><strong>Duplicate Mobile:</strong> The mobile number is already registered. Use a unique mobile number.</li>
+                  <li><strong>Duplicate Email:</strong> The email address is already in use. Use a different email address.</li>
+                  <li><strong>Database constraint error:</strong> Check for duplicate values in any unique fields (Aadhar, MIS ID, Mobile, Email).</li>
+                  <li><strong>Expected count mismatch:</strong> Update the "Expected Count" field or verify your Excel row count.</li>
+                </ul>
+              </p>
+            </div>
+          ),
+        });
+        message.error(`Upload failed: ${dbErrors.length} error(s), ${createdCount} created.`);
+      }
+      // Check if there are validation errors in the response
+      else if (errorData?.errors && Array.isArray(errorData.errors)) {
+        const validationErrors = errorData.errors;
+        let errorMessage = 'Validation errors found in your file:\n\n';
+        
+        validationErrors.forEach((row: any, idx: number) => {
+          if (row.errors) {
+            errorMessage += `Row ${row.index + 1}:\n`;
+            Object.entries(row.errors).forEach(([field, msgs]: [string, any]) => {
+              if (Array.isArray(msgs)) {
+                errorMessage += `  • ${field}: ${msgs.join(', ')}\n`;
+              }
+            });
+            errorMessage += '\n';
+          }
+        });
+        
+        Modal.error({
+          title: '❌ Upload Validation Failed',
+          width: 700,
+          content: (
+            <div>
+              <p style={{ marginBottom: 16 }}>
+                <strong>Your Excel file has validation errors:</strong>
+              </p>
+              <pre
+                style={{
+                  backgroundColor: '#f5f5f5',
+                  padding: 12,
+                  borderRadius: 4,
+                  maxHeight: 300,
+                  overflow: 'auto',
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {errorMessage}
+              </pre>
+              <p style={{ marginTop: 16, color: '#666' }}>
+                <strong>Required fields:</strong>
+              </p>
+              <ul>
+                <li><code>mis_id</code> - MIS ID (required)</li>
+                <li><code>name</code> - Volunteer Name (required)</li>
+              </ul>
+              <p style={{ marginTop: 10, color: '#999', fontSize: 12 }}>
+                Download the template to see the correct format.
+              </p>
+            </div>
+          ),
+        });
+        message.error('Please fix the validation errors and try again.');
+      } else {
+        message.error(errorData?.message || errorData?.detail || 'Upload failed!');
+      }
     } finally {
       setLoading(false);
+      console.log('🔹 ✅ Upload process finished');
     }
   };
 
@@ -329,7 +623,15 @@ export const YouthOrganisationForm: React.FC = () => {
 
         <Alert
           message="Upload Instructions"
-          description="Upload an Excel (.xls / .xlsx) file or ZIP file containing volunteer data with the required fields."
+          description={
+            <div>
+              Upload an Excel (.xls / .xlsx) file or ZIP file with volunteer data.
+              <br />
+              <strong>Required Fields:</strong> mis_id, name
+              <br />
+              Download the sample template to see the correct format.
+            </div>
+          }
           type="info"
           showIcon
         />
@@ -393,7 +695,7 @@ export const YouthOrganisationForm: React.FC = () => {
                   optionFilterProp="children"
                 >
                   {orgTypes.map((o) => (
-                    <Select.Option key={o.id} value={o.id}>{o.name}</Select.Option>
+                    <Select.Option key={o.id} value={o.id}>{o.code}</Select.Option>
                   ))}
                 </Select>
               </Form.Item>
@@ -469,6 +771,25 @@ export const YouthOrganisationForm: React.FC = () => {
           <Button
             icon={<DownloadOutlined />}
             type="default"
+            onClick={async () => {
+              try {
+                console.log('🔹 Download button clicked');
+                message.loading({ content: 'Downloading template...', key: 'download' });
+                await CommonService.downloadVolunteerTemplate();
+                message.success({ 
+                  content: 'Template downloaded successfully!', 
+                  key: 'download', 
+                  duration: 2 
+                });
+              } catch (error: any) {
+                console.error('🔹 Download error:', error);
+                message.error({ 
+                  content: error.message || 'Download failed', 
+                  key: 'download', 
+                  duration: 5 
+                });
+              }
+            }}
           >
             Download Sample Template
           </Button>
@@ -521,8 +842,8 @@ export const YouthOrganisationForm: React.FC = () => {
                   <Table
                     dataSource={uploadResult.errors.map((error: any, idx: number) => ({
                       key: idx,
-                      index: error.index + 1,
-                      errors: error.errors,
+                      index: error.index !== undefined ? error.index + 1 : (idx + 1),
+                      errors: error.errors || error,
                     }))}
                     columns={[
                       {
@@ -536,15 +857,43 @@ export const YouthOrganisationForm: React.FC = () => {
                         title: "Error Details",
                         dataIndex: "errors",
                         key: "errors",
-                        render: (errors: any) => (
-                          <Space direction="vertical" size={0}>
-                            {Object.entries(errors).map(([field, errorArray]: [string, any]) => (
-                              <div key={field}>
-                                <strong>{field}:</strong> {errorArray.join(", ")}
-                              </div>
-                            ))}
-                          </Space>
-                        ),
+                        render: (errors: any) => {
+                          if (!errors || typeof errors !== 'object') {
+                            return <span>{String(errors)}</span>;
+                          }
+                          
+                          // Handle case where errors is an array
+                          if (Array.isArray(errors)) {
+                            return (
+                              <Space direction="vertical" size={0}>
+                                {errors.map((error: any, idx: number) => (
+                                  <div key={idx}>{String(error)}</div>
+                                ))}
+                              </Space>
+                            );
+                          }
+                          
+                          // Handle case where errors is an object with field names
+                          return (
+                            <Space direction="vertical" size={0}>
+                              {Object.entries(errors).map(([field, errorValue]: [string, any]) => {
+                                let errorText = '';
+                                if (Array.isArray(errorValue)) {
+                                  errorText = errorValue.join(", ");
+                                } else if (typeof errorValue === 'object') {
+                                  errorText = String(errorValue.message || JSON.stringify(errorValue));
+                                } else {
+                                  errorText = String(errorValue);
+                                }
+                                return (
+                                  <div key={field}>
+                                    <strong>{field}:</strong> {errorText}
+                                  </div>
+                                );
+                              })}
+                            </Space>
+                          );
+                        },
                       },
                     ]}
                     pagination={false}
@@ -561,9 +910,10 @@ export const YouthOrganisationForm: React.FC = () => {
                     message="Upload Warnings"
                     description={
                       <ul style={{ margin: 0, paddingLeft: 20 }}>
-                        {uploadResult.warnings.map((warning: any, idx: number) => (
-                          <li key={idx}>{warning}</li>
-                        ))}
+                        {uploadResult.warnings.map((warning: any, idx: number) => {
+                          const warningText = typeof warning === 'string' ? warning : (warning?.message || JSON.stringify(warning));
+                          return <li key={idx}>{warningText}</li>;
+                        })}
                       </ul>
                     }
                     type="warning"

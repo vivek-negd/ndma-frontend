@@ -66,10 +66,98 @@ export const SeventhDayTrainingRecords: React.FC = () => {
   const [toDate, setToDate] = useState("");
   const [states, setStates] = useState<any[]>([]);
   const [statesLoading, setStatesLoading] = useState(false);
+  const [records, setRecords] = useState<Record[]>([]);
+  const [loadingRecords, setLoadingRecords] = useState(false);
 
   useEffect(() => {
     fetchStates();
+    fetchRecords();
   }, []);
+
+  // Helper: Extract day number from session, trying multiple approaches
+  const getSessionDay = (session: any, sessionIndex: number): number | null => {
+    if (!session) return null;
+    
+    // Primary: Try numeric day field
+    if (typeof session.day === 'number') return session.day;
+    if (typeof session.day === 'string' && /^\d+$/.test(session.day)) return parseInt(session.day);
+    
+    // Secondary: Extract from day_label
+    if (typeof session.day_label === 'string') {
+      const match = session.day_label.match(/Day\s*(\d+)/i);
+      if (match) return parseInt(match[1]);
+    }
+    
+    // Fallback: Use index-based mapping (1st session = Day 1, 2nd = Day 4, 3rd = Day 7)
+    if (sessionIndex === 0) return 1;
+    if (sessionIndex === 1) return 4;
+    if (sessionIndex === 2) return 7;
+    
+    return null;
+  };
+
+  const fetchRecords = async () => {
+    try {
+      setLoadingRecords(true);
+      const res = await CommonService.getTrainingSchedules(7);
+      console.log('📥 API Response for Day 7:', res);
+      
+      let list: any[] = [];
+      if (res && Array.isArray((res as any).results)) list = (res as any).results;
+      else if (res && Array.isArray((res as any).data)) list = (res as any).data;
+      else if (Array.isArray(res)) list = res as any;
+
+      console.log('📋 Parsed list:', list);
+      const rows: Record[] = [];
+      
+      list.forEach((sch: any) => {
+        const sessions = sch.sessions || [];
+        console.log(`\n🔄 Schedule ${sch.id}: Total sessions = ${sessions.length}`);
+        
+        // If backend returned only 1 session, use it (backend already filtered by day)
+        let session = null;
+        if (sessions.length === 1) {
+          session = sessions[0];
+          console.log(`   ✅ Single session (backend filtered): ID=${session.id}, day=${session.day || session.day_label}`);
+        } else if (sessions.length > 1) {
+          // Multiple sessions: filter strictly by day 7
+          sessions.forEach((s: any, idx: number) => {
+            const day = getSessionDay(s, idx);
+            console.log(`   Session[${idx}] ID=${s.id}: day=${day}, day_label="${s.day_label}", date="${s.date || s.day_date}"`);
+          });
+          session = sessions.find((s: any, idx: number) => getSessionDay(s, idx) === 7);
+          if (session) {
+            console.log(`   ✅ Filtered to Day 7 session: ID=${session.id}`);
+          } else {
+            console.log(`   ❌ No Day 7 session found`);
+          }
+        }
+        
+        if (!session) return;
+        
+        rows.push({
+          key: `${sch.id}-${session.id}`,
+          state: sch.state_name || sch.state || String(sch.state),
+          district: sch.district_name || sch.district || String(sch.district),
+          organization: sch.organization_name || sch.organization || '',
+          volunteers: sch.number_of_volunteers || sch.numberOfVol || 0,
+          date: session.date || session.day_date || '',
+          media: Array.isArray(session.media) ? session.media : [],
+          batchNo: sch.batch_no || sch.batchNo || '',
+          instituteDetails: sch.institute_details || sch.venue || '',
+          trainer: sch.trainers_details || sch.trainers || '',
+          status: sch.status || ''
+        });
+      });
+      
+      console.log(`\n✅ Final Day 7 Records: ${rows.length} found\n`);
+      setRecords(rows);
+    } catch (err) {
+      console.error('❌ Failed to load training records', err);
+    } finally {
+      setLoadingRecords(false);
+    }
+  };
 
   const fetchStates = async () => {
     try {
@@ -97,16 +185,17 @@ export const SeventhDayTrainingRecords: React.FC = () => {
   };
 
   /* Derived stats */
-  const totalRecords = ALL_RECORDS.length;
-  const statesCovered = new Set(ALL_RECORDS.map((r) => r.state)).size;
-  const totalVolunteers = ALL_RECORDS.reduce((s, r) => s + r.volunteers, 0);
-  const totalMedia = ALL_RECORDS.reduce((s, r) => s + r.media.length, 0);
+  const totalRecords = records.length || ALL_RECORDS.length;
+  const statesCovered = new Set((records.length ? records : ALL_RECORDS).map((r) => r.state)).size;
+  const totalVolunteers = (records.length ? records : ALL_RECORDS).reduce((s, r) => s + (r.volunteers || 0), 0);
+  const totalMedia = (records.length ? records : ALL_RECORDS).reduce((s, r) => s + ((r.media && r.media.length) || 0), 0);
 
   /* State options - from API */
   const stateOptions = states.map((s: any) => ({ label: s.name, value: s.id }));
 
   /* Filtered rows */
-  const filtered = ALL_RECORDS.filter((r) => {
+  const dataSource = records.length ? records : ALL_RECORDS;
+  const filtered = dataSource.filter((r) => {
     const q = search.toLowerCase();
     const matchSearch = !q || r.state.toLowerCase().includes(q) || r.district.toLowerCase().includes(q) || r.organization.toLowerCase().includes(q);
     const matchState = !state || r.state === state;
@@ -293,6 +382,7 @@ export const SeventhDayTrainingRecords: React.FC = () => {
           columns={columns}
           dataSource={filtered}
           rowKey="key"
+          loading={loadingRecords}
           pagination={{ pageSize: 10, showSizeChanger: true }}
           style={{ borderRadius: 0 }}
         />

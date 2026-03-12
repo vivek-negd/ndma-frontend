@@ -18,6 +18,7 @@ import {
   Spin,
   Table,
   Tag,
+  Modal,
 } from "antd";
 import {
   InboxOutlined,
@@ -161,6 +162,23 @@ const BulkYouthOrgUpload: React.FC = () => {
     onRemove: () => setFileList([]),
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      message.loading({ content: 'Downloading template...', key: 'download' });
+      
+      await CommonService.downloadVolunteerTemplate();
+      
+      message.success({ content: 'Template downloaded successfully!', key: 'download', duration: 2 });
+    } catch (error: any) {
+      console.error('Download error:', error);
+      message.error({ 
+        content: error?.message || 'Failed to download template', 
+        key: 'download', 
+        duration: 5 
+      });
+    }
+  };
+
   const handleUpload = async () => {
     if (fileList.length === 0) {
       message.warning("Please select a file first.");
@@ -177,32 +195,28 @@ const BulkYouthOrgUpload: React.FC = () => {
       
       // REQUIRED: File
       formData.append('file', fileList[0]);
-      
-      // Get organization name/id
+
       if (formValues.organizationType) {
-        formData.append('organization_id', formValues.organizationType);
+        formData.append('organization_id', String(formValues.organizationType));
       }
-      
-      // Get state name from selected state ID
+
       if (formValues.state) {
-        const stateName = states.find(s => s.id === formValues.state)?.name;
-        if (stateName) {
-          formData.append('state_name', stateName);
-        }
+        formData.append('state_id', String(formValues.state));
+        const stateName = states.find((s) => s.id === formValues.state)?.name;
+        if (stateName) formData.append('state_name', stateName);
       }
-      
-      // Get district name from selected district ID
+
       if (formValues.district) {
-        const districtName = districts.find(d => d.id === formValues.district)?.name;
-        if (districtName) {
-          formData.append('district_name', districtName);
-        }
+        formData.append('district_id', String(formValues.district));
+        const districtName = districts.find((d) => d.id === formValues.district)?.name;
+        if (districtName) formData.append('district_name', districtName);
       }
 
       setLoading(true);
       console.log('Starting upload with file:', fileList[0].name, 'Size:', fileList[0].size);
 
-      const response = await CommonService.uploadYouthOrgBulk(formData);
+      // Upload volunteer data using bulk upload endpoint
+      const response = await CommonService.uploadVolunteersBulk(formData);
       
       // Store the upload result for display (response from API)
       const uploadData = (response as any)?.data || response;
@@ -243,7 +257,23 @@ const BulkYouthOrgUpload: React.FC = () => {
       console.error('Error response:', error?.response);
       console.error('Error status:', error?.response?.status);
       console.error('Error data:', error?.response?.data);
-      message.error(error?.response?.data?.message || "Upload failed!");
+      const data = error?.response?.data;
+      if (data) {
+        setUploadResult(data);
+        message.error(`Upload completed with ${data.error_count || 1} error(s).`);
+        try {
+          const pretty = JSON.stringify(data.errors || data, null, 2);
+          Modal.error({
+            title: 'Upload validation errors',
+            width: 800,
+            content: <pre style={{ whiteSpace: 'pre-wrap' }}>{pretty}</pre>,
+          });
+        } catch {
+          // ignore
+        }
+      } else {
+        message.error('Upload failed!');
+      }
     } finally {
       setLoading(false);
     }
@@ -377,6 +407,7 @@ const BulkYouthOrgUpload: React.FC = () => {
             <Button
               icon={<DownloadOutlined />}
               type="default"
+              onClick={handleDownloadTemplate}
             >
               Download Sample Template
             </Button>
