@@ -29,6 +29,7 @@ export const SeventhDayTrainingForm = () => {
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
+  const [fileList, setFileList] = useState<any[]>([]);
   const [states, setStates] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [orgTypes, setOrgTypes] = useState<any[]>([]);
@@ -223,8 +224,8 @@ export const SeventhDayTrainingForm = () => {
       if (createRes?.data?.session?.id) {
         sessionId = createRes.data.session.id;
         console.log('✅ Session ID found at .data.session.id:', sessionId);
-      } else if (createRes?.session?.id) {
-        sessionId = createRes.session.id;
+      } else if ((createRes as any)?.session?.id) {
+        sessionId = (createRes as any).session.id;
         console.log('✅ Session ID found at .session.id:', sessionId);
       } else if (createRes?.data?.id) {
         sessionId = createRes.data.id;
@@ -248,7 +249,7 @@ export const SeventhDayTrainingForm = () => {
         try {
           const uploadRes = await CommonService.uploadSessionPhotos(sessionId, filesToUpload);
           console.log('📥 Upload Response:', uploadRes);
-          const uploadedCount = uploadRes?.data?.length || uploadRes?.uploaded?.length || fileList.length;
+          const uploadedCount = uploadRes?.data?.length || fileList.length;
           messageApi.success(`✅ Training created! ${uploadedCount} photo(s) uploaded`);
         } catch (uploadErr) {
           console.error('⚠️ Photo upload failed:', uploadErr);

@@ -411,4 +411,11 @@ export class CommonService {
     // If we exhausted candidates, throw a generic error
     throw new Error('Update failed: no supported endpoint/method accepted the request');
   }
+
+  // Get training session history
+  static async getSessionHistory(batchNumber?: string): Promise<ApiResponse<any>> {
+    const params = batchNumber ? `?batch_no=${batchNumber}` : '';
+    const response = await commonEndpoint.get<ApiResponse<any>>(`/training-schedules/session_history/${params}`);
+    return response.data;
+  }
 }

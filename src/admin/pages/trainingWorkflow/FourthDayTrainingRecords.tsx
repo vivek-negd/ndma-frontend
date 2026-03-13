@@ -19,7 +19,7 @@ import { CommonService } from "../../../services";
 
 const { Title, Text } = Typography;
 
-/* ── Dummy data ── */
+/* ── Record interface ── */
 interface Record {
   key: string;
   state: string;
@@ -28,22 +28,11 @@ interface Record {
   volunteers: number;
   date: string;
   media: string[];
+  batchNo?: string;
+  instituteDetails?: string;
+  trainer?: string;
+  status?: string;
 }
-
-const ALL_RECORDS: Record[] = [
-  { key: "1",  state: "Jharkhand",       district: "Ranchi",      organization: "NSS (National Service Scheme)",   volunteers: 90,  date: "09 Jun 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "2",  state: "Assam",           district: "Guwahati",    organization: "Bharat Scouts & Guides",          volunteers: 60,  date: "02 Jun 2025", media: [] },
-  { key: "3",  state: "Madhya Pradesh",  district: "Bhopal",      organization: "NCC (National Cadet Corps)",      volunteers: 120, date: "28 May 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "4",  state: "Rajasthan",       district: "Jaipur",      organization: "NYKS (Nehru Yuva Kendra)",        volunteers: 95,  date: "22 May 2025", media: [] },
-  { key: "5",  state: "Odisha",          district: "Bhubaneswar", organization: "NSS (National Service Scheme)",   volunteers: 110, date: "18 May 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "6",  state: "Bihar",           district: "Patna",       organization: "NCC (National Cadet Corps)",      volunteers: 80,  date: "14 May 2025", media: [] },
-  { key: "7",  state: "West Bengal",     district: "Kolkata",     organization: "Bharat Scouts & Guides",          volunteers: 150, date: "10 May 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "8",  state: "Uttar Pradesh",   district: "Lucknow",     organization: "NYKS (Nehru Yuva Kendra)",        volunteers: 200, date: "05 May 2025", media: [] },
-  { key: "9",  state: "Gujarat",         district: "Ahmedabad",   organization: "NSS (National Service Scheme)",   volunteers: 75,  date: "30 Apr 2025", media: ["https://via.placeholder.com/40", "https://via.placeholder.com/40"] },
-  { key: "10", state: "Karnataka",       district: "Bengaluru",   organization: "NCC (National Cadet Corps)",      volunteers: 130, date: "25 Apr 2025", media: [] },
-  { key: "11", state: "Tamil Nadu",      district: "Chennai",     organization: "Bharat Scouts & Guides",          volunteers: 100, date: "20 Apr 2025", media: ["https://via.placeholder.com/40"] },
-  { key: "12", state: "Kerala",          district: "Thiruvananthapuram", organization: "NYKS (Nehru Yuva Kendra)", volunteers: 150, date: "15 Apr 2025", media: [] },
-];
 
 /* ── Stat Card ── */
 const StatCard: React.FC<{ label: string; value: string | number; color: string }> = ({ label, value, color }) => (
@@ -99,54 +88,50 @@ export const FourthDayTrainingRecords: React.FC = () => {
   const fetchRecords = async () => {
     try {
       setLoadingRecords(true);
-      const res = await CommonService.getTrainingSchedules(4);
-      console.log('📥 API Response for Day 4:', res);
+      const res = await CommonService.getSessionHistory();
+      console.log('📥 API Response for Session History:', res);
       
       let list: any[] = [];
-      if (res && Array.isArray((res as any).results)) list = (res as any).results;
-      else if (res && Array.isArray((res as any).data)) list = (res as any).data;
-      else if (Array.isArray(res)) list = res as any;
+      if (res && Array.isArray((res as any).data)) {
+        list = (res as any).data;
+      } else if (Array.isArray(res)) {
+        list = res as any;
+      }
 
-      console.log('📋 Parsed list:', list);
+      console.log('📋 Parsed session history list:', list);
       const rows: Record[] = [];
       
-      list.forEach((sch: any) => {
-        const sessions = sch.sessions || [];
-        console.log(`\n🔄 Schedule ${sch.id}: Total sessions = ${sessions.length}`);
+      list.forEach((schedule: any) => {
+        const sessions = schedule.sessions || [];
+        console.log(`\n🔄 Schedule ${schedule.id} (Batch: ${schedule.batch_no}): Total sessions = ${sessions.length}`);
         
-        // If backend returned only 1 session, use it (backend already filtered by day)
-        let session = null;
-        if (sessions.length === 1) {
-          session = sessions[0];
-          console.log(`   ✅ Single session (backend filtered): ID=${session.id}, day=${session.day || session.day_label}`);
-        } else if (sessions.length > 1) {
-          // Multiple sessions: filter strictly by day 4
-          sessions.forEach((s: any, idx: number) => {
-            const day = getSessionDay(s, idx);
-            console.log(`   Session[${idx}] ID=${s.id}: day=${day}, day_label="${s.day_label}", date="${s.date || s.day_date}"`);
-          });
-          session = sessions.find((s: any, idx: number) => getSessionDay(s, idx) === 4);
-          if (session) {
-            console.log(`   ✅ Filtered to Day 4 session: ID=${session.id}`);
-          } else {
-            console.log(`   ❌ No Day 4 session found`);
-          }
+        // Filter for Day 4 sessions only
+        const day4Session = sessions.find((s: any) => 
+          s.day_label?.toLowerCase().includes('day 4') || 
+          s.day_label?.toLowerCase().includes('day4') ||
+          s.day === 4 ||
+          s.day === '4'
+        );
+        
+        if (!day4Session) {
+          console.log(`   ❌ No Day 4 session found for batch ${schedule.batch_no}`);
+          return;
         }
         
-        if (!session) return;
+        console.log(`   ✅ Found Day 4 session: ID=${day4Session.id}, date=${day4Session.date}`);
         
         rows.push({
-          key: `${sch.id}-${session.id}`,
-          state: sch.state_name || sch.state || String(sch.state),
-          district: sch.district_name || sch.district || String(sch.district),
-          organization: sch.organization_name || sch.organization || '',
-          volunteers: sch.number_of_volunteers || sch.numberOfVol || 0,
-          date: session.date || session.day_date || '',
-          media: Array.isArray(session.media) ? session.media : [],
-          batchNo: sch.batch_no || sch.batchNo || '',
-          instituteDetails: sch.institute_details || sch.venue || '',
-          trainer: sch.trainers_details || sch.trainers || '',
-          status: sch.status || ''
+          key: `${schedule.id}-${day4Session.id}`,
+          state: schedule.state_name || '',
+          district: schedule.district_name || '',
+          organization: schedule.organization_name || '',
+          volunteers: schedule.number_of_volunteers || 0,
+          date: day4Session.date || '',
+          media: Array.isArray(day4Session.media_files) ? day4Session.media_files : [],
+          batchNo: schedule.batch_no || '',
+          instituteDetails: schedule.institute_details || schedule.venue || '',
+          trainer: schedule.trainers_details || schedule.trainers || '',
+          status: schedule.status || ''
         });
       });
       
@@ -185,17 +170,16 @@ export const FourthDayTrainingRecords: React.FC = () => {
   };
 
   /* Derived stats */
-  const totalRecords   = records.length || ALL_RECORDS.length;
-  const statesCovered  = new Set((records.length ? records : ALL_RECORDS).map((r) => r.state)).size;
-  const totalVolunteers = (records.length ? records : ALL_RECORDS).reduce((s, r) => s + (r.volunteers || 0), 0);
-  const totalMedia     = (records.length ? records : ALL_RECORDS).reduce((s, r) => s + ((r.media && r.media.length) || 0), 0);
+  const totalRecords   = records.length;
+  const statesCovered  = new Set(records.map((r) => r.state)).size;
+  const totalVolunteers = records.reduce((s, r) => s + (r.volunteers || 0), 0);
+  const totalMedia     = records.reduce((s, r) => s + ((r.media && r.media.length) || 0), 0);
 
   /* State options - from API */
   const stateOptions = states.map((s: any) => ({ label: s.name, value: s.id }));
 
   /* Filtered rows */
-  const dataSource = records.length ? records : ALL_RECORDS;
-  const filtered = dataSource.filter((r) => {
+  const filtered = records.filter((r) => {
     const q = search.toLowerCase();
     const matchSearch = !q || r.state.toLowerCase().includes(q) || r.district.toLowerCase().includes(q) || r.organization.toLowerCase().includes(q);
     const matchState  = !state || r.state === state;

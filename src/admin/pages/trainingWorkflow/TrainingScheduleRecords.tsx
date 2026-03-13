@@ -187,96 +187,77 @@ export const TrainingScheduleRecords: React.FC = () => {
       const res = await CommonService.getTrainingSchedules();
       let rawRecords: any[] = [];
       
-      // Handle direct array response
-      if (Array.isArray(res)) {
-        rawRecords = res;
-      }
-      // Handle wrapped response { data: [...] }
-      else if (res.data && Array.isArray(res.data)) {
+      // Handle training schedules API response structure
+      if (res && Array.isArray((res as any).results)) {
+        rawRecords = (res as any).results;
+      } else if (res && res.data && Array.isArray(res.data)) {
         rawRecords = res.data;
-      }
-      // Handle paginated response { data: { data: [...] } }
-      else if (res.data && typeof res.data === 'object' && 'data' in res.data) {
-        rawRecords = (res.data as any).data;
+      } else if (Array.isArray(res)) {
+        rawRecords = res;
       } else {
         rawRecords = [];
       }
       
       console.log('Raw training schedules:', rawRecords);
-      console.log('Available states for mapping:', states);
+      console.log('API Response structure:', res);
       
       // Debug: Log first record structure if available
       if (rawRecords.length > 0) {
         console.log('First record structure:', {
-          state: `${rawRecords[0].state} (type: ${typeof rawRecords[0].state})`,
-          district: `${rawRecords[0].district} (type: ${typeof rawRecords[0].district})`,
-          organization: `${rawRecords[0].organization} (type: ${typeof rawRecords[0].organization})`,
-          organization_name: `${rawRecords[0].organization_name}`,
-          batch_no: `${rawRecords[0].batch_no}`,
-          all_keys: Object.keys(rawRecords[0])
+          id: rawRecords[0].id,
+          batch_no: rawRecords[0].batch_no,
+          state: rawRecords[0].state,
+          district: rawRecords[0].district,
+          organization_type: rawRecords[0].organization_type,
+          number_of_volunteers: rawRecords[0].number_of_volunteers
         });
       }
       
-      // Enrich records with human-readable names
-      const enrichedRecords = rawRecords.map((r: any, idx: number) => {
-        // Get state name - handle both number and string IDs
-        let stateName = String(r.state);
-        console.log(`[Record ${idx + 1}] Looking for state ID: ${r.state} (type: ${typeof r.state})`);
-        
-        // Try to find state by ID (handle both numeric and string IDs)
-        const stateObj = states.find((s: any) => {
-          const sId = String(s.id);
-          const rId = String(r.state);
-          return sId === rId || parseInt(sId) === parseInt(rId);
-        });
-        
-        if (stateObj) {
-          stateName = stateObj.name;
-          console.log(`  ✓ Found state: ${stateName}`);
-        } else {
-          console.log(`  ✗ State not found. Searched states:`, states.map((s: any) => ({ id: s.id, name: s.name })));
-        }
-        
-        // Get district name
-        let districtName = r.district || 'N/A';
-        if (typeof r.district === 'number') {
-          const districtObj = districts.find((d: any) => 
-            d.id === r.district || d.id === parseInt(String(r.district))
-          );
-          districtName = districtObj?.name || `District ${r.district}`;
-        }
-        console.log(`  District: ${districtName} (lookup from ${districts.length} districts)`);
-        
-        // Get organization type - for display
-        let orgName = r.organization_type || r.organization_name;
-        
-        // If organization_type is not available, try to find from orgTypes by ID
-        if (!orgName && r.organization) {
-          const orgObj = orgTypes.find((o: any) => 
-            o.id === r.organization || o.id === parseInt(String(r.organization))
-          );
-          orgName = orgObj?.code || orgObj?.name || `Org ${r.organization}`;
-        }
-        
-        if (!orgName) {
-          orgName = 'N/A';
-        }
-        console.log(`  Organization: ${orgName} (from organization_type: ${r.organization_type}, organization_name: ${r.organization_name})`, orgTypes);
-        
-        return {
-          ...r,
-          state: stateName,
-          district: districtName,
-          organization: orgName,
-          volunteers: r.number_of_volunteers || 0,
-          batchNo: r.batch_no,
-          venue: r.institute_details,
-          trainersDetails: r.trainers_details,
-          startDate: r.start_date,
-          endDate: r.end_date,
-          status: r.status
-        };
-      });
+      // Transform records - need to get state and district names
+      const enrichedRecords = await Promise.all(
+        rawRecords.map(async (r: any) => {
+          // Get state name
+          let stateName = 'N/A';
+          if (r.state_name) {
+            stateName = r.state_name;
+          } else if (r.state) {
+            const stateObj = states.find((s: any) => s.id === r.state || s.id === parseInt(String(r.state)));
+            stateName = stateObj?.name || `State ${r.state}`;
+          }
+          
+          // Get district name
+          let districtName = 'N/A';
+          if (r.district_name) {
+            districtName = r.district_name;
+          } else if (r.district) {
+            const districtObj = districts.find((d: any) => d.id === r.district || d.id === parseInt(String(r.district)));
+            districtName = districtObj?.name || `District ${r.district}`;
+          }
+          
+          // Get organization name
+          let orgName = 'N/A';
+          if (r.organization_name) {
+            orgName = r.organization_name;
+          } else if (r.organization_type) {
+            const orgTypeObj = orgTypes.find((o: any) => o.id === r.organization_type || o.id === parseInt(String(r.organization_type)));
+            orgName = orgTypeObj?.name || `Org ${r.organization_type}`;
+          }
+          
+          return {
+            id: r.id,
+            state: stateName,
+            district: districtName,
+            organization: orgName,
+            volunteers: r.number_of_volunteers || 0,
+            batchNo: r.batch_no || r.batchNo || 'N/A',
+            venue: r.institute_details || r.venue || 'N/A',
+            trainersDetails: r.trainers_details || r.trainers || 'N/A',
+            startDate: r.start_date || r.startDate || 'N/A',
+            endDate: r.end_date || r.endDate || 'N/A',
+            status: r.status || 'draft'
+          };
+        })
+      );
       
       console.log('Enriched records:', enrichedRecords);
       setRecords(enrichedRecords as TrainingScheduleRecord[]);
@@ -402,7 +383,12 @@ export const TrainingScheduleRecords: React.FC = () => {
       dataIndex: "status",
       key: "status",
       width: 130,
-      render: (v: string) => <Text style={{ fontSize: 13, color: "#374151" }}>{v}</Text>,
+      render: (v: string) => (
+        <Badge 
+          status={v === 'ongoing' ? 'processing' : 'default'} 
+          text={<Text style={{ fontSize: 13, color: "#374151", textTransform: 'capitalize' }}>{v}</Text>}
+        />
+      ),
     },
   ];
 

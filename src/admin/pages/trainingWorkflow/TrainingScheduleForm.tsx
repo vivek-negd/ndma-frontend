@@ -155,10 +155,17 @@ export const TrainingScheduleForm: React.FC = () => {
         return;
       }
 
+      // Check if end date is before start date
+      if (end.isBefore(start, 'day')) {
+        message.error('End date cannot be before start date');
+        setLoading(false);
+        return;
+      }
+
       // Ensure schedule covers at least 7 days (Day 1..Day 7)
       const daysRange = end.diff(start, 'days');
       if (daysRange < 6) {
-        message.error('Schedule must span at least 7 days (start and end inclusive)');
+        message.error(`Training must be at least 7 days. Current selection is only ${daysRange + 1} day(s). Please select an end date that is at least 6 days after the start date.`);
         setLoading(false);
         return;
       }
@@ -202,7 +209,7 @@ export const TrainingScheduleForm: React.FC = () => {
       form.resetFields();
       // Navigate back to records page after successful creation
       setTimeout(() => {
-        navigate('/admin/training/schedule/records');
+        navigate('/training-schedule-records');
       }, 1500);
     } catch (error) {
       console.error("Error creating training schedule:", error);
@@ -308,13 +315,47 @@ export const TrainingScheduleForm: React.FC = () => {
 
             <Col xs={24} sm={12} md={6}>
               <Form.Item label="Start Date" name="startDate" rules={[{ required: true, message: "Please select start date!" }]}>
-                <DatePicker style={{ width: "100%" }} placeholder="Select Start Date" />
+                <DatePicker 
+                  style={{ width: "100%" }} 
+                  placeholder="Select Start Date"
+                  onChange={(date) => {
+                    const endDate = form.getFieldValue('endDate');
+                    if (endDate && date) {
+                      const daysRange = endDate.diff(date, 'days');
+                      if (daysRange < 6) {
+                        message.warning('End date must be at least 7 days from start date');
+                      }
+                    }
+                  }}
+                />
               </Form.Item>
             </Col>
 
             <Col xs={24} sm={12} md={6}>
               <Form.Item label="End Date" name="endDate" rules={[{ required: true, message: "Please select end date!" }]}>
-                <DatePicker style={{ width: "100%" }} placeholder="Select End Date" />
+                <DatePicker 
+                  style={{ width: "100%" }} 
+                  placeholder="Select End Date"
+                  disabledDate={(current) => {
+                    const startDate = form.getFieldValue('startDate');
+                    if (!startDate) return false;
+                    // Disable dates before start date or less than 7 days from start
+                    const minEndDate = startDate.clone().add(6, 'days');
+                    return current && current.isBefore(minEndDate, 'day');
+                  }}
+                  onChange={(date) => {
+                    const startDate = form.getFieldValue('startDate');
+                    if (startDate && date) {
+                      const daysRange = date.diff(startDate, 'days');
+                      if (daysRange < 6) {
+                        message.error('End date must be at least 7 days from start date');
+                        form.setFieldValue('endDate', null);
+                      } else {
+                        message.success(`Training period: ${daysRange + 1} days`);
+                      }
+                    }
+                  }}
+                />
               </Form.Item>
             </Col>
           </Row>
