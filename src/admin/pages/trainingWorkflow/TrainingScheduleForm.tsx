@@ -211,9 +211,37 @@ export const TrainingScheduleForm: React.FC = () => {
       setTimeout(() => {
         navigate('/training-schedule-records');
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating training schedule:", error);
-      message.error("Failed to save training schedule!");
+      
+      // Parse API error response
+      let errorMessage = "Failed to save training schedule!";
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        // Handle batch_no duplicate error
+        if (errorData.batch_no && Array.isArray(errorData.batch_no)) {
+          errorMessage = `Batch Number Error: ${errorData.batch_no[0]}`;
+        }
+        // Handle other field-specific errors
+        else if (typeof errorData === 'object') {
+          const firstErrorKey = Object.keys(errorData)[0];
+          const firstErrorValue = errorData[firstErrorKey];
+          
+          if (Array.isArray(firstErrorValue) && firstErrorValue.length > 0) {
+            errorMessage = `${firstErrorKey.replace(/_/g, ' ').toUpperCase()}: ${firstErrorValue[0]}`;
+          } else if (typeof firstErrorValue === 'string') {
+            errorMessage = firstErrorValue;
+          }
+        }
+        // Handle message field
+        else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      }
+      
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }

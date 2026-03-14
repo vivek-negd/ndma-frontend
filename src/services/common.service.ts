@@ -413,9 +413,12 @@ export class CommonService {
   }
 
   // Get training session history
-  static async getSessionHistory(batchNumber?: string): Promise<ApiResponse<any>> {
-    const params = batchNumber ? `?batch_no=${batchNumber}` : '';
-    const response = await commonEndpoint.get<ApiResponse<any>>(`/training-schedules/session_history/${params}`);
+  static async getSessionHistory(options?: { batchNumber?: string; day?: number }): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (options?.batchNumber) params.append('batch_no', options.batchNumber);
+    if (options?.day) params.append('day', String(options.day));
+    const query = params.toString();
+    const response = await commonEndpoint.get<ApiResponse<any>>(`/training-schedules/session_history/${query ? `?${query}` : ''}`);
     return response.data;
   }
 }

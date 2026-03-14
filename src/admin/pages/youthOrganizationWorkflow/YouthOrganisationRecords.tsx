@@ -189,8 +189,7 @@ export const YouthOrganisationRecords: React.FC = () => {
             let dateLabel = item.date || '';
             
             if (item.bulk_upload_session_id) {
-              // This is a session-based row - add session info to label
-              organizationLabel = `${organizationLabel} (Session #${item.bulk_upload_session_id})`;
+              // This is a session-based row - show file name in date
               dateLabel = `${item.date || ''} [${item.upload_file_name || 'Uploaded'}]`;
             } else {
               // This is an aggregate row - mark it as current/aggregate
@@ -675,40 +674,8 @@ export const YouthOrganisationRecords: React.FC = () => {
       dataIndex: "organization",
       key: "organization",
       render: (v: string, record: Record) => {
-        // Show organization_type_code with styling if available
-        const orgCode = record.organization_type_code;
-        if (orgCode) {
-          const codeColors: Record<string, string> = {
-            'NSS': '#e0f2fe',
-            'NCC': '#fee2e2',
-            'NYKS': '#fef3c7',
-            'BSG': '#dcfce7',
-          };
-          const codeBgColor = codeColors[orgCode] || '#f0f0f0';
-          const codeTextColor = codeColors[orgCode] === '#e0f2fe' ? '#0369a1' : 
-                              codeColors[orgCode] === '#fee2e2' ? '#991b1b' :
-                              codeColors[orgCode] === '#fef3c7' ? '#92400e' : '#166534';
-          
-          return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span 
-                style={{
-                  backgroundColor: codeBgColor,
-                  color: codeTextColor,
-                  padding: '4px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {orgCode}
-              </span>
-              <Text style={{ fontSize: 13, color: "#374151" }}>{v}</Text>
-            </div>
-          );
-        }
-        return <Text style={{ fontSize: 13, color: "#374151" }}>{v}</Text>;
+        const orgCode = record.organization_type_code || v;
+        return <Text style={{ fontSize: 13, color: "#374151" }}>{orgCode}</Text>;
       },
     },
     {
@@ -781,13 +748,9 @@ export const YouthOrganisationRecords: React.FC = () => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: '#ecfdf5',
               }}
-              title={isSessionDownload ? `Download Session #${record.bulk_upload_session_id}` : 'Download All Volunteers'}
+              title={isSessionDownload ? 'Download Session Volunteers' : 'Download All Volunteers'}
             >
               {isDownloading ? <Spin size="small" /> : <FileExcelOutlined style={{ color: '#047857', fontSize: 16 }} />}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', flexDirection: 'column', gap: 2 }}>
-              <Badge count={badgeCount} size="small" style={{ backgroundColor: '#16a34a', boxShadow: 'none' }} />
-              <Text style={{ fontSize: 11, color: '#9ca3af' }}>{isSessionDownload ? 'Session' : 'All'}</Text>
             </div>
           </div>
         );

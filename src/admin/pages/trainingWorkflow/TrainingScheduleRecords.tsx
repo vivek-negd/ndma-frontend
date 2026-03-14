@@ -8,11 +8,13 @@ import {
   Image,
   Badge,
   Spin,
+  Modal,
 } from "antd";
 import {
   PlusOutlined,
   SearchOutlined,
   PictureOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { CommonService, AuthService } from "../../../services";
@@ -20,6 +22,14 @@ import { CommonService, AuthService } from "../../../services";
 const { Title, Text } = Typography;
 
 /* ── Record interface ── */
+interface MediaFile {
+  id: number;
+  image_url: string;
+  file_name: string;
+  file_size: number;
+  uploaded_at: string;
+}
+
 interface TrainingScheduleRecord {
   id?: string;
   state: string;
@@ -32,6 +42,8 @@ interface TrainingScheduleRecord {
   venue: string;
   trainersDetails: string;
   status: string;
+  mediaFiles: MediaFile[];
+  totalMedia: number;
 }
 
 /* ── Stat Card ── */
@@ -60,6 +72,9 @@ export const TrainingScheduleRecords: React.FC = () => {
   const [statesLoading, setStatesLoading] = useState(false);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [orgTypes, setOrgTypes] = useState<any[]>([]);
+  const [galleryVisible, setGalleryVisible] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<MediaFile[]>([]);
+  const [galleryTitle, setGalleryTitle] = useState("");
 
   useEffect(() => {
     fetchStates();
@@ -184,10 +199,10 @@ export const TrainingScheduleRecords: React.FC = () => {
   const fetchRecords = async () => {
     try {
       setRecordsLoading(true);
-      const res = await CommonService.getTrainingSchedules();
+      const res = await CommonService.getSessionHistory();
       let rawRecords: any[] = [];
       
-      // Handle training schedules API response structure
+      // Handle session history API response structure
       if (res && Array.isArray((res as any).results)) {
         rawRecords = (res as any).results;
       } else if (res && res.data && Array.isArray(res.data)) {
@@ -198,19 +213,13 @@ export const TrainingScheduleRecords: React.FC = () => {
         rawRecords = [];
       }
       
-      console.log('Raw training schedules:', rawRecords);
+      console.log('Raw session history:', rawRecords);
       console.log('API Response structure:', res);
       
       // Debug: Log first record structure if available
       if (rawRecords.length > 0) {
-        console.log('First record structure:', {
-          id: rawRecords[0].id,
-          batch_no: rawRecords[0].batch_no,
-          state: rawRecords[0].state,
-          district: rawRecords[0].district,
-          organization_type: rawRecords[0].organization_type,
-          number_of_volunteers: rawRecords[0].number_of_volunteers
-        });
+        console.log('First record structure:', rawRecords[0]);
+        console.log('Image URL from API:', rawRecords[0].image_url);
       }
       
       // Transform records - need to get state and district names
@@ -234,32 +243,45 @@ export const TrainingScheduleRecords: React.FC = () => {
             districtName = districtObj?.name || `District ${r.district}`;
           }
           
-          // Get organization name
-          let orgName = 'N/A';
-          if (r.organization_name) {
-            orgName = r.organization_name;
-          } else if (r.organization_type) {
+          // Get organization type code
+          let orgCode = 'N/A';
+          if (r.organization_type) {
             const orgTypeObj = orgTypes.find((o: any) => o.id === r.organization_type || o.id === parseInt(String(r.organization_type)));
-            orgName = orgTypeObj?.name || `Org ${r.organization_type}`;
+            orgCode = orgTypeObj?.code || orgTypeObj?.name || 'N/A';
+          } else if (r.organization_name) {
+            orgCode = r.organization_name;
+          }
+          
+          // Extract all media files from all sessions
+          let allMediaFiles: MediaFile[] = [];
+          if (r.sessions && Array.isArray(r.sessions)) {
+            r.sessions.forEach((session: any) => {
+              if (session.media_files && Array.isArray(session.media_files)) {
+                allMediaFiles = [...allMediaFiles, ...session.media_files];
+              }
+            });
           }
           
           return {
             id: r.id,
             state: stateName,
             district: districtName,
-            organization: orgName,
+            organization: orgCode,
             volunteers: r.number_of_volunteers || 0,
             batchNo: r.batch_no || r.batchNo || 'N/A',
             venue: r.institute_details || r.venue || 'N/A',
             trainersDetails: r.trainers_details || r.trainers || 'N/A',
             startDate: r.start_date || r.startDate || 'N/A',
             endDate: r.end_date || r.endDate || 'N/A',
-            status: r.status || 'draft'
+            status: r.status || 'draft',
+            mediaFiles: allMediaFiles,
+            totalMedia: r.total_media || allMediaFiles.length
           };
         })
       );
       
-      console.log('Enriched records:', enrichedRecords);
+      console.log('Enriched records with images:', enrichedRecords);
+      console.log('Media counts:', enrichedRecords.map(r => ({ batch: r.batchNo, mediaCount: r.totalMedia })));
       setRecords(enrichedRecords as TrainingScheduleRecord[]);
     } catch (error) {
       console.error("Records fetch error:", error);
@@ -311,12 +333,6 @@ export const TrainingScheduleRecords: React.FC = () => {
   /* Table columns */
   const columns = [
     {
-      title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>#</span>,
-      key: "index",
-      width: 50,
-      render: (_: any, __: any, i: number) => <Text style={{ color: "#6b7280", fontSize: 13 }}>{i + 1}</Text>,
-    },
-    {
       title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>STATE</span>,
       dataIndex: "state",
       key: "state",
@@ -335,6 +351,32 @@ export const TrainingScheduleRecords: React.FC = () => {
       dataIndex: "organization",
       key: "organization",
       render: (v: string) => <Text style={{ fontSize: 13, color: "#374151" }}>{v}</Text>,
+    },
+    {
+      title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>MEDIA</span>,
+      dataIndex: "mediaFiles",
+      key: "mediaFiles",
+      width: 100,
+      align: "center" as const,
+      render: (mediaFiles: MediaFile[], record: TrainingScheduleRecord) => {
+        if (!mediaFiles || mediaFiles.length === 0) {
+          return <PictureOutlined style={{ fontSize: 24, color: "#d1d5db" }} />;
+        }
+        return (
+          <Badge count={record.totalMedia} offset={[-5, 5]} style={{ backgroundColor: '#2563eb' }}>
+            <Button
+              type="text"
+              icon={<CameraOutlined style={{ fontSize: 24, color: "#2563eb" }} />}
+              onClick={() => {
+                setGalleryImages(mediaFiles);
+                setGalleryTitle(`Media - ${record.batchNo}`);
+                setGalleryVisible(true);
+              }}
+              style={{ border: 'none', padding: 0, height: 'auto' }}
+            />
+          </Badge>
+        );
+      },
     },
     {
       title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>NO. OF VOLUNTEERS</span>,
@@ -377,18 +419,6 @@ export const TrainingScheduleRecords: React.FC = () => {
       key: "endDate",
       width: 130,
       render: (v: string) => <Text style={{ fontSize: 13, color: "#374151" }}>{v}</Text>,
-    },
-    {
-      title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}> STATUS</span>,
-      dataIndex: "status",
-      key: "status",
-      width: 130,
-      render: (v: string) => (
-        <Badge 
-          status={v === 'ongoing' ? 'processing' : 'default'} 
-          text={<Text style={{ fontSize: 13, color: "#374151", textTransform: 'capitalize' }}>{v}</Text>}
-        />
-      ),
     },
   ];
 
@@ -475,6 +505,55 @@ export const TrainingScheduleRecords: React.FC = () => {
           style={{ borderRadius: 0 }}
         />
       </div>
+
+      {/* Image Gallery Modal */}
+      <Modal
+        title={galleryTitle}
+        open={galleryVisible}
+        onCancel={() => setGalleryVisible(false)}
+        footer={null}
+        width={900}
+        centered
+      >
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+          gap: 16, 
+          padding: '20px 0' 
+        }}>
+          {galleryImages.map((media, index) => (
+            <div key={media.id} style={{ 
+              border: '1px solid #e5e7eb', 
+              borderRadius: 8, 
+              overflow: 'hidden',
+              background: '#f9fafb'
+            }}>
+              <Image
+                src={media.image_url}
+                alt={media.file_name}
+                width="100%"
+                height={200}
+                style={{ objectFit: 'cover' }}
+                preview={true}
+              />
+              <div style={{ padding: '8px 12px', fontSize: 12 }}>
+                <Text ellipsis style={{ display: 'block', color: '#374151', fontWeight: 500 }}>
+                  {media.file_name}
+                </Text>
+                <Text style={{ display: 'block', color: '#9ca3af', fontSize: 11, marginTop: 4 }}>
+                  {(media.file_size / 1024).toFixed(1)} KB
+                </Text>
+              </div>
+            </div>
+          ))}
+        </div>
+        {galleryImages.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
+            <PictureOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+            <div>No media files available</div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

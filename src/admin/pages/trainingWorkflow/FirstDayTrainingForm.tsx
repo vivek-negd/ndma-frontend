@@ -223,7 +223,37 @@ export const FirstDayTrainingForm = () => {
       
     } catch (error: any) {
       console.error('❌ Submit error:', error);
-      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to save training';
+      
+      // Parse API error response
+      let errorMsg = 'Failed to save training';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        // Handle batch_no duplicate error
+        if (errorData.batch_no && Array.isArray(errorData.batch_no)) {
+          errorMsg = `Batch Number: ${errorData.batch_no[0]}`;
+        }
+        // Handle other field-specific errors
+        else if (typeof errorData === 'object' && !errorData.message) {
+          const firstErrorKey = Object.keys(errorData)[0];
+          const firstErrorValue = errorData[firstErrorKey];
+          
+          if (Array.isArray(firstErrorValue) && firstErrorValue.length > 0) {
+            const fieldName = firstErrorKey.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+            errorMsg = `${fieldName}: ${firstErrorValue[0]}`;
+          } else if (typeof firstErrorValue === 'string') {
+            errorMsg = firstErrorValue;
+          }
+        }
+        // Handle message field
+        else if (errorData.message) {
+          errorMsg = errorData.message;
+        }
+      } else if (error?.message) {
+        errorMsg = error.message;
+      }
+      
       messageApi.error(errorMsg);
     } finally {
       setLoading(false);

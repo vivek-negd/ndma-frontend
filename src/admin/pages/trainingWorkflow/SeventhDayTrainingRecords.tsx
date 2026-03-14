@@ -6,7 +6,6 @@ import {
   Select,
   Table,
   Image,
-  Badge,
   Spin,
 } from "antd";
 import {
@@ -63,33 +62,11 @@ export const SeventhDayTrainingRecords: React.FC = () => {
     fetchRecords();
   }, []);
 
-  // Helper: Extract day number from session, trying multiple approaches
-  const getSessionDay = (session: any, sessionIndex: number): number | null => {
-    if (!session) return null;
-    
-    // Primary: Try numeric day field
-    if (typeof session.day === 'number') return session.day;
-    if (typeof session.day === 'string' && /^\d+$/.test(session.day)) return parseInt(session.day);
-    
-    // Secondary: Extract from day_label
-    if (typeof session.day_label === 'string') {
-      const match = session.day_label.match(/Day\s*(\d+)/i);
-      if (match) return parseInt(match[1]);
-    }
-    
-    // Fallback: Use index-based mapping (1st session = Day 1, 2nd = Day 4, 3rd = Day 7)
-    if (sessionIndex === 0) return 1;
-    if (sessionIndex === 1) return 4;
-    if (sessionIndex === 2) return 7;
-    
-    return null;
-  };
-
   const fetchRecords = async () => {
     try {
       setLoadingRecords(true);
-      const res = await CommonService.getSessionHistory();
-      console.log('📥 API Response for Session History:', res);
+      const res = await CommonService.getSessionHistory({ day: 7 });
+      console.log('📥 API Response for Day 7 Session History:', res);
       
       let list: any[] = [];
       if (res && Array.isArray((res as any).data)) {
@@ -98,19 +75,17 @@ export const SeventhDayTrainingRecords: React.FC = () => {
         list = res as any;
       }
 
-      console.log('📋 Parsed session history list:', list);
+      console.log('📋 Parsed Day 7 session history list:', list);
       const rows: Record[] = [];
       
       list.forEach((schedule: any) => {
         const sessions = schedule.sessions || [];
         console.log(`\n🔄 Schedule ${schedule.id} (Batch: ${schedule.batch_no}): Total sessions = ${sessions.length}`);
         
-        // Filter for Day 7 sessions only
+        // Filter for Day 7 session only (backend might return all sessions)
         const day7Session = sessions.find((s: any) => 
-          s.day_label?.toLowerCase().includes('day 7') || 
-          s.day_label?.toLowerCase().includes('day7') ||
-          s.day === 7 ||
-          s.day === '7'
+          s.day_label?.toLowerCase() === 'day 7' ||
+          s.day_label?.toLowerCase() === 'day7'
         );
         
         if (!day7Session) {
@@ -189,12 +164,6 @@ export const SeventhDayTrainingRecords: React.FC = () => {
   /* Table columns */
   const columns = [
     {
-      title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>#</span>,
-      key: "index",
-      width: 50,
-      render: (_: any, __: any, i: number) => <Text style={{ color: "#6b7280", fontSize: 13 }}>{i + 1}</Text>,
-    },
-    {
       title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>STATE</span>,
       dataIndex: "state",
       key: "state",
@@ -258,27 +227,18 @@ export const SeventhDayTrainingRecords: React.FC = () => {
       render: (media: string[]) => {
         if (!media || media.length === 0) return <Text style={{ color: "#9ca3af" }}>—</Text>;
         return (
-          <Badge count={media.length} size="small" style={{ backgroundColor: "#3b82f6" }}>
-            <div
-              style={{
-                width: 40, height: 32, borderRadius: 4, overflow: "hidden",
-                border: "1px solid #e5e7eb", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "#f3f4f6",
-              }}
-            >
-              <PictureOutlined style={{ color: "#6b7280", fontSize: 16 }} />
-            </div>
-          </Badge>
+          <div
+            style={{
+              width: 40, height: 32, borderRadius: 4, overflow: "hidden",
+              border: "1px solid #e5e7eb", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "#f3f4f6",
+            }}
+          >
+            <PictureOutlined style={{ color: "#6b7280", fontSize: 16 }} />
+          </div>
         );
       },
-    },
-    {
-      title: <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: "0.5px" }}>STATUS</span>,
-      dataIndex: "status",
-      key: "status",
-      width: 130,
-      render: (v: string) => <Text style={{ fontSize: 13, color: "#374151" }}>{v}</Text>,
     },
   ];
 
